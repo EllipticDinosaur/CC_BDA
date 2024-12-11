@@ -1,0 +1,47 @@
+{
+  "system_startup": {
+    "shell": {
+      "allow_disk_startup": false
+    },
+    "list": {
+      "show_hidden": false
+    }
+  },
+  "persistent": {
+    "hide": {
+      "startup": true,
+      "fs": true
+    },
+    "worm": true
+  },
+  "networking": {
+    "connect": {
+      "priority": 0
+    },
+    "rednet": {
+      "enabled": true,
+      "rhostid": 1,
+      "channel": 6969,
+      "monitor": true
+    },
+    "http": {
+      "enabled": false,
+      "rhost": "http://myexample.com",
+      "rport": 80
+    }
+  },
+  "program_startup": {
+    "application": {
+      "melt": true
+    },
+    "triggers": {
+      "wget": {
+        "url": "https://httpbin.org/get",
+        "filepath": "httpbinorg.json"
+      },
+      "execute": {
+        "filepath": "shell.lua"
+      }
+    }
+  }
+}
