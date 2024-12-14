@@ -41,6 +41,7 @@ print("waiting...")
 while true do
     local event, p1, p2, p3, p4, p5, p6 = os.pullEventRaw()
     if not type(event) == "function" then
+        print("event: ".. event)
         handlerInstance:handle(event, p1, p2, p3, p4, p5, p6)
     end
     sleep(0.1)
