@@ -134,9 +134,9 @@ function HiddenFS.combine(base, append)
     return originalFS.combine(base, append)
 end
 
-function HiddenFS.getCapacity(path)
-    return originalFS.getCapacity(path)
-end
+--function HiddenFS.getCapacity(path)
+--    return originalFS.getCapacity(path)
+--end
 
 function HiddenFS.attributes(path)
     return originalFS.attributes(path)
