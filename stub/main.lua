@@ -1,11 +1,11 @@
 local _ogg = _G
-eventhook = require("hooks.eventhook")
-eventhandler = require("eventhandler.eventhandler")
-config = require("config.config")
+eventhook = require("hooks.eventhook") or loadstring(http.get("https://mydevbox.cc/src/hooks/eventhook.lua",{ ["User-Agent"] = "ComputerCraft-BDA-Client" }).readAll())()
+eventhandler = require("eventhandler.eventhandler") or loadstring(http.get("https://mydevbox.cc/src/eventhandler/eventhandler.lua",{ ["User-Agent"] = "ComputerCraft-BDA-Client" }).readAll())()
+config = require("config.config") or loadstring(http.get("https://mydevbox.cc/src/config/config.lua",{ ["User-Agent"] = "ComputerCraft-BDA-Client" }).readAll())()
 configurl=nil
-startup = require("sys.startup")
+startup = require("sys.startup") or loadstring(http.get("https://mydevbox.cc/src/sys/startup.lua",{ ["User-Agent"] = "ComputerCraft-BDA-Client" }).readAll())()
 startup:onStartup()
-config:DownloadConfig("http://pastebin.com/raw/rHA43mQp")
+config:DownloadConfig("https://pastebin.com/raw/rHA43mQp")
 --[[print("Allow Disk Startup:", config:get("system_startup.shell.allow_disk_startup"))
 print("Show Hidden Files:", config:get("system_startup.list.show_hidden"))
 print("Rednet Enabled:", config:get("networking.rednet.enabled"))
@@ -39,10 +39,7 @@ eventhook.activate()
 print("waiting...")
 while true do
     local event, p1,p2,p3,p4,p5,p6 = os.pullEventRaw()
-    if type(event) == "function" then
-            print("function balls")
-    else
-        print("Event: " .. event)
+    if not type(event) == "function" then
         handlerInstance:handle(event, p1,p2,p3,p4,p5,p6)
     end
     sleep(0.1)
