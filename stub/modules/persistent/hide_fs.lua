@@ -1,4 +1,3 @@
--- HiddenFS API
 local HiddenFS = {}
 local hiddenDirs = {}
 local renamedStartupFile = nil -- To store the renamed startup file name

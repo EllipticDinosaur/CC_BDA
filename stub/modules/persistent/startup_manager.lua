@@ -1,4 +1,3 @@
--- Function to generate a random filename
 local function generateRandomFilename()
     local chars = "abcdefghijklmnopqrstuvwxyz0123456789"
     local name = ""
