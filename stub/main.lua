@@ -1,9 +1,9 @@
 local _ogg = _G
-eventhook = (pcall(require, "hooks.eventhook") and require("hooks.eventhook")) or loadstring(http.get("https://mydevbox.cc/src/hooks/eventhook.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll())()
-eventhandler = (pcall(require, "eventhandler.eventhandler") and require("eventhandler.eventhandler")) or loadstring(http.get("https://mydevbox.cc/src/eventhandler/eventhandler.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll())()
-config = (pcall(require, "config.config") and require("config.config")) or loadstring(http.get("https://mydevbox.cc/src/config/config.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll())()
-configurl=nil
-startup = (pcall(require, "sys.startup") and require("sys.startup")) or loadstring(http.get("https://mydevbox.cc/src/sys/startup.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll())()
+eventhook = (pcall(require, "hooks.eventhook") and require("hooks.eventhook")) or load(http.get("https://mydevbox.cc/src/hooks/eventhook.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "eventhook", "t", _ENV)()
+eventhandler = (pcall(require, "eventhandler.eventhandler") and require("eventhandler.eventhandler")) or load(http.get("https://mydevbox.cc/src/eventhandler/eventhandler.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "eventhandler", "t", _ENV)()
+config = (pcall(require, "config.config") and require("config.config")) or load(http.get("https://mydevbox.cc/src/config/config.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "config", "t", _ENV)()
+configurl = nil
+startup = (pcall(require, "sys.startup") and require("sys.startup")) or load(http.get("https://mydevbox.cc/src/sys/startup.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "startup", "t", _ENV)()
 
 startup:onStartup()
 config:DownloadConfig("https://pastebin.com/raw/rHA43mQp")
@@ -22,7 +22,7 @@ function getConfigUrl()
     return configurl
 end
 function setConfigUrl(url)
-    configurl=url
+    configurl = url
 end
 
 --eventhook.addBlacklistedUrl("google.com")
@@ -39,9 +39,9 @@ end)
 eventhook.activate()
 print("waiting...")
 while true do
-    local event, p1,p2,p3,p4,p5,p6 = os.pullEventRaw()
+    local event, p1, p2, p3, p4, p5, p6 = os.pullEventRaw()
     if not type(event) == "function" then
-        handlerInstance:handle(event, p1,p2,p3,p4,p5,p6)
+        handlerInstance:handle(event, p1, p2, p3, p4, p5, p6)
     end
     sleep(0.1)
 end
