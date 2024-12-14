@@ -3,7 +3,7 @@ local hiddenDirs = {}
 local renamedStartupFile = nil -- To store the renamed startup file name
 
 -- Backup the original fs
-HiddenFS.originalFS = _G.fs
+originalFS = _G.fs
 
 -- Add a directory to the hidden list
 function HiddenFS.hide(dir)
@@ -32,12 +32,12 @@ end
 
 -- Disable the custom fs API and restore the original
 function HiddenFS.disable()
-    _G.fs = HiddenFS.originalFS
+    _G.fs = OriginalFS
 end
 
 -- Override the list method
 function HiddenFS.list(path, showHidden)
-    local items = HiddenFS.originalFS.list(path)
+    local items = originalFS.list(path)
     local filteredItems = {}
     for _, item in ipairs(items) do
         if showHidden or not hiddenDirs[item] then
@@ -51,7 +51,7 @@ end
 function HiddenFS.exists(path)
     if path == "startup.lua" then
         if renamedStartupFile then
-            return HiddenFS.originalFS.exists(renamedStartupFile)
+            return originalFS.exists(renamedStartupFile)
         end
         return false
     end
@@ -60,35 +60,35 @@ function HiddenFS.exists(path)
             return false
         end
     end
-    return HiddenFS.originalFS.exists(path)
+    return originalFS.exists(path)
 end
 
 -- Override the delete method
 function HiddenFS.delete(path)
     if path == "startup.lua" then
         if renamedStartupFile then
-            HiddenFS.originalFS.delete(renamedStartupFile)
+            originalFS.delete(renamedStartupFile)
             renamedStartupFile = nil
         end
         return
     end
-    HiddenFS.originalFS.delete(path)
+    originalFS.delete(path)
 end
 
 -- Override the open method
 function HiddenFS.open(path, mode)
     if path == "startup.lua" then
         if renamedStartupFile then
-            return HiddenFS.originalFS.open(renamedStartupFile, mode)
+            return originalFS.open(renamedStartupFile, mode)
         end
         return nil
     end
-    return HiddenFS.originalFS.open(path, mode)
+    return originalFS.open(path, mode)
 end
 
 -- Override the find method
 function HiddenFS.find(path, showHidden)
-    local items = HiddenFS.originalFS.find(path)
+    local items = originalFS.find(path)
     local filteredItems = {}
     for _, item in ipairs(items) do
         local isHidden = false
@@ -107,46 +107,43 @@ end
 
 -- Pass-through for other fs methods
 function HiddenFS.isDir(path)
-    return HiddenFS.originalFS.isDir(path)
+    return originalFS.isDir(path)
 end
 
 function HiddenFS.getSize(path)
-    return HiddenFS.originalFS.getSize(path)
+    return originalFS.getSize(path)
 end
 
 function HiddenFS.makeDir(path)
-    return HiddenFS.originalFS.makeDir(path)
+    return originalFS.makeDir(path)
 end
 
 function HiddenFS.getDir(path)
-    return HiddenFS.originalFS.getDir(path)
+    return originalFS.getDir(path)
 end
 
 function HiddenFS.getName(path)
-   -- if (path == nil) then
-     --   path = "/"
-   -- end
-    return HiddenFS.originalFS.getName(path)
+    return originalFS.getName(path)
 end
 
 function HiddenFS.getDrive(path)
-    return HiddenFS.originalFS.getDrive(path)
+    return originalFS.getDrive(path)
 end
 
 function HiddenFS.combine(base, append)
-    return HiddenFS.originalFS.combine(base, append)
+    return originalFS.combine(base, append)
 end
 
 function HiddenFS.getCapacity(path)
-    return HiddenFS.originalFS.getCapacity(path)
+    return originalFS.getCapacity(path)
 end
 
 function HiddenFS.attributes(path)
-    return HiddenFS.originalFS.attributes(path)
+    return originalFS.attributes(path)
 end
 
 function HiddenFS.complete(partial, path, includeFiles, includeDirs)
-    local results = HiddenFS.originalFS.complete(partial, path, includeFiles, includeDirs)
+    local results = originalFS.complete(partial, path, includeFiles, includeDirs)
     local filteredResults = {}
     for _, result in ipairs(results) do
         local isHidden = false
