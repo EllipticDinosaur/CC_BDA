@@ -165,6 +165,7 @@ setmetatable(HiddenFS, {
                 __metatable = nil -- Prevent further access to the metatable
             })
         end
+        print("Key: "..key)
         return nil -- Fallback for non-existing keys
     end,
 
