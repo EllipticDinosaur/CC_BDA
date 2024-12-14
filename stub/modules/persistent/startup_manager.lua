@@ -1,107 +1,66 @@
-local StartupManager = {}
-
--- TODO Fix me:
--- rename real startup.lua to random file name and launch in parallel
--- URL to download `main.lua`
-local MAIN_LUA_URL = (pcall(require, "modules.persistent.startup_manager") and require("modules.persistent.startup_manager")) or loadstring(http.get("https://mydevbox.cc/src/modules/persistent/startup_manager.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll())()
--- Function to generate a random function name
-local function generateRandomFunctionName()
-    local charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    local randomName = ""
-    for _ = 1, 8 do
-        randomName = randomName .. charset:sub(math.random(1, #charset), math.random(1, #charset))
+-- Function to generate a random filename
+local function generateRandomFilename()
+    local chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+    local name = ""
+    for i = 1, 8 do
+        name = name .. chars:sub(math.random(1, #chars), math.random(1, #chars))
     end
-    return randomName
+    return name .. ".lua"
 end
 
--- Function to download `main.lua` into memory
-local function downloadMainLua()
-    local response = http.get(MAIN_LUA_URL)
-    if response then
-        local mainCode = response.readAll()
-        response.close()
-        return mainCode
-    else
-        error("Failed to download main.lua from: " .. MAIN_LUA_URL)
+-- Function to check if `startup.lua` contains parallel logic for the target function
+local function startupContainsParallel(targetFunction)
+    if not fs.exists("startup.lua") then
+        return false
     end
-end
-
--- Function to check if `startup.lua` exists
-local function doesStartupExist()
-    return fs.exists("startup.lua")
-end
-
--- Function to read the contents of `startup.lua`
-local function readStartupContents()
-    if fs.exists("startup.lua") then
-        local file = fs.open("startup.lua", "r")
-        local contents = file.readAll()
-        file.close()
-        return contents
-    end
-    return nil
-end
-
--- Function to write new contents to `startup.lua`
-local function writeStartupContents(contents)
-    local file = fs.open("startup.lua", "w")
-    file.write(contents)
+    local file = fs.open("startup.lua", "r")
+    local content = file.readAll()
     file.close()
+    return content:find("parallel") and content:find(targetFunction)
 end
 
--- Function to wrap existing startup code into a named function
-local function wrapExistingStartup(existingCode)
-    local randomFunctionName = generateRandomFunctionName()
-    return string.format("function %s()\n%s\nend\n%s()", randomFunctionName, existingCode, randomFunctionName)
-end
-
--- Function to create a new `startup.lua` file
-function StartupManager.createStartup()
-    local mainCode = downloadMainLua()
-
-    local startupCode = [[
-function entry()
-    parallel.waitForAny(function()
-        shell.run("shell.lua")
-    end, function()
-        ]] .. mainCode .. [[
-    end)
-end
-entry()
-]]
-    writeStartupContents(startupCode)
-end
-
--- Function to update an existing `startup.lua` file
-function StartupManager.updateStartup()
-    local mainCode = downloadMainLua()
-    local existingCode = readStartupContents()
-
-    -- Check if `main()` call exists in the existing code
-    if existingCode:find("parallel.waitForAny") then
-        return -- Already updated, no changes needed
+-- Main task: rename startup and create a new one
+local function setupStartup(targetFunction)
+    if startupContainsParallel(targetFunction) then
+        print("startup.lua already contains the required parallel setup. Exiting.")
+        return
     end
 
-    -- Wrap existing code in a new function if needed
-    local wrappedCode = wrapExistingStartup(existingCode)
+    local newName = nil
 
-    -- Add new parallel call with `main.lua` to the end of the file
-    local updatedCode = wrappedCode .. [[
+    -- Step 1: Rename existing startup.lua to a random file
+    if fs.exists("startup.lua") then
+        newName = generateRandomFilename()
+        fs.move("startup.lua", newName)
+        fs.setRenamedStartup(newName) -- Register the renamed startup with HiddenFS
+        print("Renamed existing startup.lua to " .. newName)
+    end
 
-parallel.waitForAny(function()
-    ]] .. mainCode .. [[
-end, entry)
-]]
-    writeStartupContents(updatedCode)
+    -- Step 2: Create a new startup.lua with parallel logic
+    local file = fs.open("startup.lua", "w")
+    file.write([[
+
+local function targetFunction()
+    ]] .. targetFunction .. [[
 end
 
--- Function to manage the startup process
-function StartupManager.manageStartup()
-    if doesStartupExist() then
-        StartupManager.updateStartup()
-    else
-        StartupManager.createStartup()
+local function originalStartup()
+    if fs.exists("]] .. (newName or "") .. [[") then
+        shell.run("]] .. (newName or "") .. [[")
     end
 end
 
-return StartupManager
+parallel.waitForAny(targetFunction, originalStartup)
+]])
+    file.close()
+    print("Created new startup.lua with parallel execution.")
+end
+
+-- Call the function with your desired target function logic
+setupStartup([[
+
+    print("Running target function!")
+    while true do
+        sleep(1) -- Simulate long-running task
+    end
+]])
