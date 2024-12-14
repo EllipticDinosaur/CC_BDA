@@ -123,9 +123,9 @@ function HiddenFS.getDir(path)
 end
 
 function HiddenFS.getName(path)
-    if (path == nil) then
-        path = "/"
-    end
+   -- if (path == nil) then
+     --   path = "/"
+   -- end
     return HiddenFS.originalFS.getName(path)
 end
 
