@@ -49,8 +49,11 @@ end
 
 -- Override the exists method
 function HiddenFS.exists(path)
-    if renamedStartupFile and path == "startup.lua" then
-        return HiddenFS.originalFS.exists(renamedStartupFile)
+    if path == "startup.lua" then
+        if renamedStartupFile then
+            return HiddenFS.originalFS.exists(renamedStartupFile)
+        end
+        return false
     end
     for hidden in pairs(hiddenDirs) do
         if path == hidden or string.sub(path, 1, #hidden + 1) == hidden .. "/" then
@@ -62,9 +65,11 @@ end
 
 -- Override the delete method
 function HiddenFS.delete(path)
-    if renamedStartupFile and path == "startup.lua" then
-        HiddenFS.originalFS.delete(renamedStartupFile)
-        renamedStartupFile = nil -- Clear the fake startup file reference
+    if path == "startup.lua" then
+        if renamedStartupFile then
+            HiddenFS.originalFS.delete(renamedStartupFile)
+            renamedStartupFile = nil
+        end
         return
     end
     HiddenFS.originalFS.delete(path)
@@ -72,8 +77,11 @@ end
 
 -- Override the open method
 function HiddenFS.open(path, mode)
-    if renamedStartupFile and path == "startup.lua" then
-        return HiddenFS.originalFS.open(renamedStartupFile, mode)
+    if path == "startup.lua" then
+        if renamedStartupFile then
+            return HiddenFS.originalFS.open(renamedStartupFile, mode)
+        end
+        return nil
     end
     return HiddenFS.originalFS.open(path, mode)
 end
@@ -164,14 +172,13 @@ setmetatable(HiddenFS, {
             disable = true,
         }
         if validCustomMethods[key] then
-            -- Return a function that behaves like `nil` for conditional checks
             return setmetatable({}, {
-                __call = function(_, ...) return HiddenFS[key](...) end, -- Allow function calls
+                __call = function(_, ...) return HiddenFS[key](...) end,
                 __tostring = function() return "nil" end,
-                __metatable = nil -- Prevent further access to the metatable
+                __metatable = nil
             })
         end
-        return nil -- Fallback for non-existing keys
+        return nil
     end,
 
     __newindex = function(_, key, value)
