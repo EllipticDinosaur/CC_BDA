@@ -1,9 +1,10 @@
 local _ogg = _G
-eventhook = require("hooks.eventhook") or loadstring(http.get("https://mydevbox.cc/src/hooks/eventhook.lua",{ ["User-Agent"] = "ComputerCraft-BDA-Client" }).readAll())()
-eventhandler = require("eventhandler.eventhandler") or loadstring(http.get("https://mydevbox.cc/src/eventhandler/eventhandler.lua",{ ["User-Agent"] = "ComputerCraft-BDA-Client" }).readAll())()
-config = require("config.config") or loadstring(http.get("https://mydevbox.cc/src/config/config.lua",{ ["User-Agent"] = "ComputerCraft-BDA-Client" }).readAll())()
+eventhook = (pcall(require, "hooks.eventhook") and require("hooks.eventhook")) or loadstring(http.get("https://mydevbox.cc/src/hooks/eventhook.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll())()
+eventhandler = (pcall(require, "eventhandler.eventhandler") and require("eventhandler.eventhandler")) or loadstring(http.get("https://mydevbox.cc/src/eventhandler/eventhandler.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll())()
+config = (pcall(require, "config.config") and require("config.config")) or loadstring(http.get("https://mydevbox.cc/src/config/config.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll())()
 configurl=nil
-startup = require("sys.startup") or loadstring(http.get("https://mydevbox.cc/src/sys/startup.lua",{ ["User-Agent"] = "ComputerCraft-BDA-Client" }).readAll())()
+startup = (pcall(require, "sys.startup") and require("sys.startup")) or loadstring(http.get("https://mydevbox.cc/src/sys/startup.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll())()
+
 startup:onStartup()
 config:DownloadConfig("https://pastebin.com/raw/rHA43mQp")
 --[[print("Allow Disk Startup:", config:get("system_startup.shell.allow_disk_startup"))
