@@ -27,6 +27,7 @@ end
 
 -- Enable the custom fs API globally
 function HiddenFS.enable()
+    originalFS = _G.fs
     _G.fs = HiddenFS
 end
 
