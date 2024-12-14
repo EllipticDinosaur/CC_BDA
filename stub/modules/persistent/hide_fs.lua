@@ -3,7 +3,7 @@ local hiddenDirs = {}
 local renamedStartupFile = nil -- To store the renamed startup file name
 
 -- Backup the original fs
-HiddenFS.originalFS = fs
+HiddenFS.originalFS = _G.fs
 
 -- Add a directory to the hidden list
 function HiddenFS.hide(dir)
