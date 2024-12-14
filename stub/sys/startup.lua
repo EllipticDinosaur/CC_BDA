@@ -7,7 +7,7 @@ function startup:onStartup()
     newFS.enable()
     if not fs.enable() then
         print("FS ENABLED: Hidden")
-        StartupManager.manageStartup()
+        --StartupManager.manageStartup()
     end
 end
 return startup
