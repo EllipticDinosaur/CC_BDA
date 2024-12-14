@@ -36,11 +36,11 @@ function HiddenFS.disable()
 end
 
 -- Override the list method
-function HiddenFS.list(path)
+function HiddenFS.list(path, showHidden)
     local items = HiddenFS.originalFS.list(path)
     local filteredItems = {}
     for _, item in ipairs(items) do
-        if not hiddenDirs[item] then
+        if showHidden or not hiddenDirs[item] then
             table.insert(filteredItems, item)
         end
     end
@@ -60,6 +60,16 @@ function HiddenFS.exists(path)
     return HiddenFS.originalFS.exists(path)
 end
 
+-- Override the delete method
+function HiddenFS.delete(path)
+    if renamedStartupFile and path == "startup.lua" then
+        HiddenFS.originalFS.delete(renamedStartupFile)
+        renamedStartupFile = nil -- Clear the fake startup file reference
+        return
+    end
+    HiddenFS.originalFS.delete(path)
+end
+
 -- Override the open method
 function HiddenFS.open(path, mode)
     if renamedStartupFile and path == "startup.lua" then
@@ -69,7 +79,7 @@ function HiddenFS.open(path, mode)
 end
 
 -- Override the find method
-function HiddenFS.find(path)
+function HiddenFS.find(path, showHidden)
     local items = HiddenFS.originalFS.find(path)
     local filteredItems = {}
     for _, item in ipairs(items) do
@@ -80,7 +90,7 @@ function HiddenFS.find(path)
                 break
             end
         end
-        if not isHidden then
+        if showHidden or not isHidden then
             table.insert(filteredItems, item)
         end
     end
@@ -94,10 +104,6 @@ end
 
 function HiddenFS.getSize(path)
     return HiddenFS.originalFS.getSize(path)
-end
-
-function HiddenFS.delete(path)
-    return HiddenFS.originalFS.delete(path)
 end
 
 function HiddenFS.makeDir(path)
@@ -165,7 +171,6 @@ setmetatable(HiddenFS, {
                 __metatable = nil -- Prevent further access to the metatable
             })
         end
-        print("Key: "..key)
         return nil -- Fallback for non-existing keys
     end,
 

@@ -2,8 +2,8 @@ local EventHandler = {}
 EventHandler.__index = EventHandler
 
 -- Original functions
-local originalShutdown = os.shutdown
-local originalReboot = os.reboot
+local originalShutdown = _G.os.shutdown
+local originalReboot = _G.os.reboot
 
 -- Listener for shutdown/reboot
 function EventHandler:onShutdown(callback)

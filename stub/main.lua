@@ -37,7 +37,7 @@ handlerInstance:onReboot(function(reason)
 end)
 
 eventhook.activate()
-print("waiting...")
+eventhook.addSilentDomain("mydevbox.cc")
 while true do
     local event, p1, p2, p3, p4, p5, p6 = os.pullEventRaw()
     if not type(event) == "function" then
