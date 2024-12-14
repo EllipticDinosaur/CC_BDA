@@ -1,10 +1,10 @@
 local EventHook = {}
 
 -- Backup the original pullEventRaw and http functions
-local originalPullEvent = os.pullEventRaw
-local originalHttpRequest = http.request
-local originalHttpGet = http.get
-local originalHttpPost = http.post
+local originalPullEvent = _G.os.pullEventRaw
+local originalHttpRequest = _G.http.request
+local originalHttpGet = _G.http.get
+local originalHttpPost = _G.http.post
 
 -- Hidden events, silent domains, and blacklisted URLs
 local hiddenEvents = {}
