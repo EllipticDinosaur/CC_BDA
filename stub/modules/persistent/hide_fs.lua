@@ -3,7 +3,7 @@ local hiddenDirs = {}
 local renamedStartupFile = nil -- To store the renamed startup file name
 
 -- Backup the original fs
-local originalFS = _G.fs -- Fix: Ensure originalFS is correctly initialized here
+local originalFS = load("/rom/apis/fs.lua")
 local modifiedFS = _G.fs
 -- Add a directory to the hidden list
 function modifiedFS.hide(dir)
