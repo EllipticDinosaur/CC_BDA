@@ -133,8 +133,6 @@ function HiddenFS.getDrive(path)
 end
 
 function HiddenFS.combine(base, append)
-    print("base: "..base)
-    print("append: "..append)
     return originalFS.combine(base, append)
 end
 
