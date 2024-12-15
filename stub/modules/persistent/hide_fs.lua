@@ -171,7 +171,7 @@ setmetatable(HiddenFS, {
             hide = true,
             unhide = true,
             isHidden = true,
-            setRenamedStartup = true,
+            setRenamedStartup = false,
             enable = true,
             disable = true,
         }
