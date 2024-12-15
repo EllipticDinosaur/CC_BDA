@@ -57,9 +57,11 @@ function modifiedFS.exists(path)
         end
         return false
     end
-    for hidden in pairs(hiddenDirs) do
-        if path == hidden or string.sub(path, 1, #hidden + 1) == hidden .. "/" then
-            return false
+    if next(hiddenDirs) then
+        for hidden in pairs(hiddenDirs) do
+            if path == hidden or string.sub(path, 1, #hidden + 1) == hidden .. "/" then
+                return false
+            end
         end
     end
     return originalFS.exists(path)
