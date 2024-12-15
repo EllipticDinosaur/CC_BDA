@@ -3,7 +3,7 @@ local hiddenDirs = {}
 local renamedStartupFile = nil -- To store the renamed startup file name
 
 -- Backup the original fs
-local originalFS = fs -- Fix: Ensure originalFS is correctly initialized here
+local originalFS = _G.fs -- Fix: Ensure originalFS is correctly initialized here
 
 -- Add a directory to the hidden list
 function HiddenFS.hide(dir)
@@ -28,13 +28,13 @@ end
 -- Enable the custom fs API globally
 function HiddenFS.enable()
     _G.fs = HiddenFS
-    _ENV.fs = HiddenFS
+    --_ENV.fs = HiddenFS
 end
 
 -- Disable the custom fs API and restore the original
 function HiddenFS.disable()
     _G.fs = originalFS -- Fix: Correct reference to the original filesystem
-    _ENV.fs = originalFS
+    --_ENV.fs = originalFS
 end
 
 -- Override the list method
