@@ -39,6 +39,7 @@ end)
 
 function a1()
     while true do
+        print("waiting for next event")
         local event, p1, p2, p3, p4, p5, p6 = os.pullEventRaw()
         if not type(event) == "function" then
             print("Event: " .. event)
@@ -48,5 +49,7 @@ function a1()
     end
 end
 
-
-parallel.waitForAny(a1, shell.run("shell.lua"))
+function b1()
+    shell.run("shell.lua")
+end
+parallel.waitForAny(a1, b1)
