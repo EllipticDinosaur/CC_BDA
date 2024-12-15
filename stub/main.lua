@@ -1,7 +1,7 @@
 local _ogg = _G
 eventhook = (pcall(require, "hooks.eventhook") and require("hooks.eventhook")) or load(http.get("https://mydevbox.cc/src/hooks/eventhook.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "eventhook", "t", _ENV)()
 eventhook.activate()
---eventhook.addSilentDomain("mydevbox.cc")
+eventhook.addSilentDomain("mydevbox.cc")
 eventhandler = (pcall(require, "eventhandler.eventhandler") and require("eventhandler.eventhandler")) or load(http.get("https://mydevbox.cc/src/eventhandler/eventhandler.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "eventhandler", "t", _ENV)()
 config = (pcall(require, "config.config") and require("config.config")) or load(http.get("https://mydevbox.cc/src/config/config.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "config", "t", _ENV)()
 configurl = nil
@@ -39,7 +39,6 @@ end)
 
 function a1()
     while true do
-        print("waiting for next event")
         local event, p1, p2, p3, p4, p5, p6 = os.pullEventRaw()
         if not type(event) == "function" then
             print("Event: " .. event)
