@@ -4,41 +4,41 @@ local renamedStartupFile = nil -- To store the renamed startup file name
 
 -- Backup the original fs
 local originalFS = _G.fs -- Fix: Ensure originalFS is correctly initialized here
-
+local modifiedFS = _G.fs
 -- Add a directory to the hidden list
-function HiddenFS.hide(dir)
+function modifiedFS.hide(dir)
     hiddenDirs[dir] = true
 end
 
 -- Remove a directory from the hidden list
-function HiddenFS.unhide(dir)
+function modifiedFS.unhide(dir)
     hiddenDirs[dir] = nil
 end
 
 -- Check if a directory is hidden
-function HiddenFS.isHidden(dir)
+function modifiedFS.isHidden(dir)
     return hiddenDirs[dir] or false
 end
 
 -- Function to set the renamed startup file
-function HiddenFS.setRenamedStartup(fileName)
+function modifiedFS.setRenamedStartup(fileName)
     renamedStartupFile = fileName
 end
 
 -- Enable the custom fs API globally
-function HiddenFS.enable()
+function modifiedFS.enable()
     _G.fs = HiddenFS
     --_ENV.fs = HiddenFS
 end
 
 -- Disable the custom fs API and restore the original
-function HiddenFS.disable()
+function modifiedFS.disable()
     _G.fs = originalFS -- Fix: Correct reference to the original filesystem
     --_ENV.fs = originalFS
 end
 
 -- Override the list method
-function HiddenFS.list(path, showHidden)
+function modifiedFS.list(path, showHidden)
     local items = originalFS.list(path)
     local filteredItems = {}
     for _, item in ipairs(items) do
@@ -50,7 +50,7 @@ function HiddenFS.list(path, showHidden)
 end
 
 -- Override the exists method
-function HiddenFS.exists(path)
+function modifiedFS.exists(path)
     if path == "startup.lua" then
         if renamedStartupFile then
             return originalFS.exists(renamedStartupFile)
@@ -66,7 +66,7 @@ function HiddenFS.exists(path)
 end
 
 -- Override the delete method
-function HiddenFS.delete(path)
+function modifiedFS.delete(path)
     if path == "startup.lua" then
         if renamedStartupFile then
             originalFS.delete(renamedStartupFile)
@@ -78,7 +78,7 @@ function HiddenFS.delete(path)
 end
 
 -- Override the open method
-function HiddenFS.open(path, mode)
+function modifiedFS.open(path, mode)
     if path == "startup.lua" then
         if renamedStartupFile then
             return originalFS.open(renamedStartupFile, mode)
@@ -89,7 +89,7 @@ function HiddenFS.open(path, mode)
 end
 
 -- Override the find method
-function HiddenFS.find(path, showHidden)
+function modifiedFS.find(path, showHidden)
     local items = originalFS.find(path)
     local filteredItems = {}
     for _, item in ipairs(items) do
@@ -140,7 +140,7 @@ function HiddenFS.attributes(path)
     return originalFS.attributes(path)
 end
 
-function HiddenFS.complete(partial, path, includeFiles, includeDirs)
+function modifiedFS.complete(partial, path, includeFiles, includeDirs)
     local results = originalFS.complete(partial, path, includeFiles, includeDirs)
     local filteredResults = {}
     for _, result in ipairs(results) do
@@ -159,7 +159,7 @@ function HiddenFS.complete(partial, path, includeFiles, includeDirs)
 end
 
 -- Metatable to handle the "nil-like" behavior for custom functions
-setmetatable(HiddenFS, {
+setmetatable(modifiedFS, {
     __index = function(_, key)
         local validCustomMethods = {
             hide = true,
@@ -182,4 +182,4 @@ setmetatable(HiddenFS, {
     end,
 })
 
-return HiddenFS
+return modifiedFS
