@@ -8,7 +8,6 @@ local expect = dofile("rom/modules/main/cc/expect.lua")
 local expect, field = expect.expect, expect.field
 
 local native = fs
-
 local fs = _ENV
 for k, v in pairs(native) do fs[k] = v end
 
@@ -110,12 +109,13 @@ end
 -- Make stealth methods undetectable
 setmetatable(fs, {
     __index = function(_, key)
-        return nil
+        return native[key] -- Forward missing keys to the original fs
     end,
     __newindex = function(_, key, value)
         rawset(fs, key, value)
     end,
 })
+
 
 -- Attach stealth methods (still callable directly)
 for name, func in pairs(stealthMethods) do
