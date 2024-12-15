@@ -3,7 +3,7 @@ local hiddenDirs = {}
 local renamedStartupFile = nil -- To store the renamed startup file name
 
 -- Backup the original fs
-originalFS = _ENV.fs
+originalFS = fs
 
 -- Add a directory to the hidden list
 function HiddenFS.hide(dir)
@@ -27,8 +27,9 @@ end
 
 -- Enable the custom fs API globally
 function HiddenFS.enable()
-    originalFS = _ENV.fs
+    originalFS = fs
     _ENV.fs = HiddenFS
+    _G.fs = HiddenFS
 end
 
 -- Disable the custom fs API and restore the original
@@ -171,7 +172,7 @@ setmetatable(HiddenFS, {
             hide = true,
             unhide = true,
             isHidden = true,
-            setRenamedStartup = false,
+            setRenamedStartup = true,
             enable = true,
             disable = true,
         }
