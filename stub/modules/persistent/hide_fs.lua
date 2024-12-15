@@ -1,4 +1,4 @@
--- SPDX-License-IdentifierText: 2017 Daniel Ratcliffe
+-- SPDX-FileCopyrightText: 2017 Daniel Ratcliffe
 --
 -- SPDX-License-Identifier: LicenseRef-CCPL
 
@@ -7,184 +7,253 @@
 local expect = dofile("rom/modules/main/cc/expect.lua")
 local expect, field = expect.expect, expect.field
 
-local fs = _ENV
 local native = fs
+
+local fs = _ENV
 for k, v in pairs(native) do fs[k] = v end
 
-local HiddenFS = {}
 local hiddenDirs = {}
-local renamedStartupFile = nil -- To store the renamed startup file name
+local originalStartup = "startup.lua"
 
--- Add a directory to the hidden list
-function fs.hide(dir)
-    hiddenDirs[dir] = true
-end
-
--- Remove a directory from the hidden list
-function fs.unhide(dir)
-    hiddenDirs[dir] = nil
-end
-
--- Check if a directory is hidden
-function fs.isHidden(dir)
-    return hiddenDirs[dir] or false
-end
-
--- Function to set the renamed startup file
-function fs.setRenamedStartup(fileName)
-    renamedStartupFile = fileName
-end
-
--- Override the list method
-function fs.list(path, showHidden)
-    local items = native.list(path)
-    local filteredItems = {}
-    for _, item in ipairs(items) do
-        if showHidden or not hiddenDirs[item] then
-            table.insert(filteredItems, item)
+-- Helper function to check if a path is hidden
+local function isHidden(path)
+    for _, dir in ipairs(hiddenDirs) do
+        if fs.combine("", path) == fs.combine("", dir) then
+            return true
         end
     end
-    return filteredItems
+    return false
 end
 
--- Override the exists method
+-- Wrapper for fs.list to exclude hidden directories
+local oldList = native.list
+function fs.list(path)
+    local files = oldList(path)
+    local visibleFiles = {}
+    for _, file in ipairs(files) do
+        local fullPath = fs.combine(path, file)
+        if not isHidden(fullPath) then
+            table.insert(visibleFiles, file)
+        end
+    end
+    return visibleFiles
+end
+
+-- Wrapper for fs.exists to account for hidden directories
+local oldExists = native.exists
 function fs.exists(path)
-    if path == "startup.lua" then
-        if renamedStartupFile then
-            return native.exists(renamedStartupFile)
-        end
-        return false
+    if isHidden(path) then
+        return true
     end
-    for hidden in pairs(hiddenDirs) do
-        if path == hidden or string.sub(path, 1, #hidden + 1) == hidden .. "/" then
-            return false
-        end
-    end
-    return native.exists(path)
+    return oldExists(path)
 end
 
--- Override the delete method
-function fs.delete(path)
-    if path == "startup.lua" then
-        if renamedStartupFile then
-            native.delete(renamedStartupFile)
-            renamedStartupFile = nil
-        end
-        return
-    end
-    native.delete(path)
-end
-
--- Override the open method
-function fs.open(path, mode)
-    if path == "startup.lua" then
-        if renamedStartupFile then
-            return native.open(renamedStartupFile, mode)
-        end
-        return nil
-    end
-    return native.open(path, mode)
-end
-
--- Override the find method
-function fs.find(pattern, showHidden)
-    local items = native.find(pattern)
-    local filteredItems = {}
-    for _, item in ipairs(items) do
-        local isHidden = false
-        for hidden in pairs(hiddenDirs) do
-            if string.sub(item, 1, #hidden) == hidden then
-                isHidden = true
-                break
-            end
-        end
-        if showHidden or not isHidden then
-            table.insert(filteredItems, item)
-        end
-    end
-    return filteredItems
-end
-
--- Pass-through for other fs methods
+-- Wrapper for fs.isDir to account for hidden directories
+local oldIsDir = native.isDir
 function fs.isDir(path)
-    return native.isDir(path)
+    if isHidden(path) then
+        return true
+    end
+    return oldIsDir(path)
 end
 
-function fs.getSize(path)
-    return native.getSize(path)
+-- Redirect startup.lua checks to another file
+local oldOpen = native.open
+function fs.open(path, mode)
+    if fs.combine("", path) == fs.combine("", "startup.lua") then
+        return oldOpen(originalStartup, mode)
+    end
+    return oldOpen(path, mode)
 end
 
-function fs.makeDir(path)
-    return native.makeDir(path)
-end
-
-function fs.getDir(path)
-    return native.getDir(path)
-end
-
-function fs.getName(path)
-    return native.getName(path)
-end
-
-function fs.getDrive(path)
-    return native.getDrive(path)
-end
-
-function fs.combine(base, append)
-    return native.combine(base, append)
-end
-
-function fs.attributes(path)
-    return native.attributes(path)
-end
-
--- Override the complete method
-function fs.complete(partial, path, includeFiles, includeDirs)
-    local results = native.complete(partial, path, includeFiles, includeDirs)
-    local filteredResults = {}
-    for _, result in ipairs(results) do
-        local isHidden = false
-        for hidden in pairs(hiddenDirs) do
-            if string.sub(result, 1, #hidden) == hidden then
-                isHidden = true
-                break
-            end
+-- Wrapper for fs.find to exclude hidden directories
+local oldFind = native.find
+function fs.find(pattern)
+    local results = oldFind(pattern)
+    local visibleResults = {}
+    for _, path in ipairs(results) do
+        if not isHidden(path) then
+            table.insert(visibleResults, path)
         end
     end
-    return filteredResults
+    return visibleResults
 end
 
--- Override the isDriveRoot method
+-- Define new methods for hiding/unhiding directories and setting original startup
+local stealthMethods = {}
+
+stealthMethods.hideDir = function(path)
+    if not fs.isDir(path) then
+        error("Path is not a directory", 2)
+    end
+    if not isHidden(path) then
+        table.insert(hiddenDirs, fs.combine("", path))
+    end
+end
+
+stealthMethods.unhideDir = function(path)
+    for i, dir in ipairs(hiddenDirs) do
+        if fs.combine("", dir) == fs.combine("", path) then
+            table.remove(hiddenDirs, i)
+            return
+        end
+    end
+end
+
+stealthMethods.setOriginalStartup = function(path)
+    if not fs.exists(path) then
+        error("Specified file does not exist", 2)
+    end
+    originalStartup = fs.combine("", path)
+end
+
+-- Make stealth methods undetectable
+setmetatable(fs, {
+    __index = function(_, key)
+        return nil
+    end,
+    __newindex = function(_, key, value)
+        rawset(fs, key, value)
+    end,
+})
+
+-- Attach stealth methods (still callable directly)
+for name, func in pairs(stealthMethods) do
+    rawset(fs, name, func)
+end
+
+--[[- Provides completion for a file or directory name, suitable for use with
+@{_G.read}.
+...
+]]
+function fs.complete(sPath, sLocation, bIncludeFiles, bIncludeDirs)
+    expect(1, sPath, "string")
+    expect(2, sLocation, "string")
+    local bIncludeHidden = nil
+    if type(bIncludeFiles) == "table" then
+        bIncludeDirs = field(bIncludeFiles, "include_dirs", "boolean", "nil")
+        bIncludeHidden = field(bIncludeFiles, "include_hidden", "boolean", "nil")
+        bIncludeFiles = field(bIncludeFiles, "include_files", "boolean", "nil")
+    else
+        expect(3, bIncludeFiles, "boolean", "nil")
+        expect(4, bIncludeDirs, "boolean", "nil")
+    end
+
+    bIncludeHidden = bIncludeHidden ~= false
+    bIncludeFiles = bIncludeFiles ~= false
+    bIncludeDirs = bIncludeDirs ~= false
+    local sDir = sLocation
+    local nStart = 1
+    local nSlash = string.find(sPath, "[/\\]", nStart)
+    if nSlash == 1 then
+        sDir = ""
+        nStart = 2
+    end
+    local sName
+    while not sName do
+        local nSlash = string.find(sPath, "[/\\]", nStart)
+        if nSlash then
+            local sPart = string.sub(sPath, nStart, nSlash - 1)
+            sDir = fs.combine(sDir, sPart)
+            nStart = nSlash + 1
+        else
+            sName = string.sub(sPath, nStart)
+        end
+    end
+
+    if fs.isDir(sDir) then
+        local tResults = {}
+        if bIncludeDirs and sPath == "" then
+            table.insert(tResults, ".")
+        end
+        if sDir ~= "" then
+            if sPath == "" then
+                table.insert(tResults, bIncludeDirs and ".." or "../")
+            elseif sPath == "." then
+                table.insert(tResults, bIncludeDirs and "." or "./")
+            end
+        end
+        local tFiles = fs.list(sDir)
+        for n = 1, #tFiles do
+            local sFile = tFiles[n]
+            if #sFile >= #sName and string.sub(sFile, 1, #sName) == sName and (
+                bIncludeHidden or sFile:sub(1, 1) ~= "." or sName:sub(1, 1) == "."
+            ) then
+                local bIsDir = fs.isDir(fs.combine(sDir, sFile))
+                local sResult = string.sub(sFile, #sName + 1)
+                if bIsDir then
+                    table.insert(tResults, sResult .. "/")
+                    if bIncludeDirs and #sResult > 0 then
+                        table.insert(tResults, sResult)
+                    end
+                else
+                    if bIncludeFiles and #sResult > 0 then
+                        table.insert(tResults, sResult)
+                    end
+                end
+            end
+        end
+        return tResults
+    end
+
+    return {}
+end
+
+local function find_aux(path, parts, i, out)
+    local part = parts[i]
+    if not part then
+        if fs.exists(path) then out[#out + 1] = path end
+    elseif part.exact then
+        return find_aux(fs.combine(path, part.contents), parts, i + 1, out)
+    else
+        if not fs.isDir(path) then return end
+
+        local files = fs.list(path)
+        for j = 1, #files do
+            local file = files[j]
+            if file:find(part.contents) then find_aux(fs.combine(path, file), parts, i + 1, out) end
+        end
+    end
+end
+
+local find_escape = {
+    ["^"] = "%^", ["$"] = "%$", ["("] = "%(", [")"] = "%)", ["%"] = "%%",
+    ["."] = "%.", ["["] = "%[", ["]"] = "%]", ["+"] = "%+", ["-"] = "%-",
+    ["*"] = ".*",
+    ["?"] = ".",
+}
+
+function fs.find(pattern)
+    expect(1, pattern, "string")
+
+    pattern = fs.combine(pattern)
+
+    if pattern == ".." or pattern:sub(1, 3) == "../" then
+        error("/" .. pattern .. ": Invalid Path", 2)
+    end
+
+    if not pattern:find("[*?]") then
+        if fs.exists(pattern) then return { pattern } else return {} end
+    end
+
+    local parts = {}
+    for part in pattern:gmatch("[^/]+") do
+        if part:find("[*?]") then
+            parts[#parts + 1] = {
+                exact = false,
+                contents = "^" .. part:gsub(".", find_escape) .. "$",
+            }
+        else
+            parts[#parts + 1] = { exact = true, contents = part }
+        end
+    end
+
+    local out = {}
+    find_aux("", parts, 1, out)
+    return out
+end
+
 function fs.isDriveRoot(sPath)
     expect(1, sPath, "string")
     return fs.getDir(sPath) == ".." or fs.getDrive(sPath) ~= fs.getDrive(fs.getDir(sPath))
 end
-
--- Ensure custom methods return nil when checked but still execute correctly
-local customMethods = {
-    hide = fs.hide,
-    unhide = fs.unhide,
-    isHidden = fs.isHidden,
-    setRenamedStartup = fs.setRenamedStartup,
-}
-
-setmetatable(fs, {
-    __index = function(_, key)
-        if customMethods[key] then
-            return function(...)
-                customMethods[key](...)
-            end
-        end
-        return native[key]
-    end,
-    __call = function(_, key)
-        if customMethods[key] then
-            return nil
-        end
-    end,
-    __newindex = function(_, key, value)
-        error("Attempt to modify read-only table: " .. tostring(key))
-    end
-})
-
-return fs
