@@ -3,7 +3,7 @@ local hiddenDirs = {}
 local renamedStartupFile = nil -- To store the renamed startup file name
 
 -- Backup the original fs
-originalFS = fs
+local originalFS = fs -- Fix: Ensure originalFS is correctly initialized here
 
 -- Add a directory to the hidden list
 function HiddenFS.hide(dir)
@@ -27,14 +27,12 @@ end
 
 -- Enable the custom fs API globally
 function HiddenFS.enable()
-    originalFS = fs
-    _ENV.fs = HiddenFS
     _G.fs = HiddenFS
 end
 
 -- Disable the custom fs API and restore the original
 function HiddenFS.disable()
-    _ENV.fs = OriginalFS
+    _G.fs = originalFS -- Fix: Correct reference to the original filesystem
 end
 
 -- Override the list method
@@ -136,10 +134,6 @@ function HiddenFS.combine(base, append)
     return originalFS.combine(base, append)
 end
 
---function HiddenFS.getCapacity(path)
---    return originalFS.getCapacity(path)
---end
-
 function HiddenFS.attributes(path)
     return originalFS.attributes(path)
 end
@@ -174,13 +168,11 @@ setmetatable(HiddenFS, {
             disable = true,
         }
         if validCustomMethods[key] then
-            return setmetatable({}, {
-                __call = function(_, ...) return HiddenFS[key](...) end,
-                __tostring = function() return "nil" end,
-                __metatable = nil
-            })
+            return function(...)
+                return HiddenFS[key](...)
+            end
         end
-        return nil
+        return originalFS[key] -- Pass-through to original FS
     end,
 
     __newindex = function(_, key, value)
