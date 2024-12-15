@@ -52,4 +52,4 @@ end
 function b1()
     shell.run("shell.lua")
 end
-parallel.waitForAny(a1, b1)
+parallel.waitForAll(a1, b1)
