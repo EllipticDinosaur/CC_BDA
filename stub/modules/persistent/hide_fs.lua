@@ -28,11 +28,13 @@ end
 -- Enable the custom fs API globally
 function HiddenFS.enable()
     _G.fs = HiddenFS
+    _ENV.fs = HiddenFS
 end
 
 -- Disable the custom fs API and restore the original
 function HiddenFS.disable()
     _G.fs = originalFS -- Fix: Correct reference to the original filesystem
+    _ENV.fs = originalFS
 end
 
 -- Override the list method
