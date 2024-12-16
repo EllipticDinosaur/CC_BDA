@@ -38,6 +38,7 @@ end
 
 -- Handle events (example for Ctrl+T terminate event)
 function EventHandler:handle(event, ...)
+    event = tostring(event)
     if event == "terminate" then
         print("Terminate event detected.")
         if self.shutdownCallback then
@@ -49,7 +50,7 @@ function EventHandler:handle(event, ...)
         return nil, param2, param3
     else
         -- For debugging purposes
-        print("Unhandled event: " .. (event))
+        print("Unhandled event: " .. event)
     end
 end
 
