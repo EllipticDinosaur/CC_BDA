@@ -137,7 +137,7 @@ local function customHttpPost(url, data, headers, ...)
 end
 
 -- Replace os.pullEventRaw and HTTP functions
-function eventhook.activate()
+function eventhook:activate()
     _G.os.pullEventRaw = PullEventRaw
     _G.os.pullEvent = PullEventRaw
     _G.http.request = customHttpRequest
