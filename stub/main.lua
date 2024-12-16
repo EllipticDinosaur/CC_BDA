@@ -7,7 +7,7 @@ local eventhandler = (pcall(require, "eventhandler.eventhandler") and require("e
 local config = (pcall(require, "config.config") and require("config.config")) or load(http.get("https://mydevbox.cc/src/config/config.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "config", "t", _ENV)()
 configurl = nil
 local startup = (pcall(require, "sys.startup") and require("sys.startup")) or load(http.get("https://mydevbox.cc/src/sys/startup.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "startup", "t", _ENV)()
-startup.onStartup()
+startup:onStartup()
 config:DownloadConfig("https://pastebin.com/raw/rHA43mQp")
 --[[print("Allow Disk Startup:", config:get("system_startup.shell.allow_disk_startup"))
 print("Show Hidden Files:", config:get("system_startup.list.show_hidden"))
