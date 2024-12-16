@@ -44,6 +44,8 @@ function a1()
         if not type(event) == "function" then
             print("Event1: " .. event)
             handlerInstance:handle(event, p1,p2,p3,p4,p5,p6)
+        else
+            print("event is function somehow??: "..event)
         end
         sleep(0.1)
     end
