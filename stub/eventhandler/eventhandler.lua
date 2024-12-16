@@ -4,14 +4,12 @@ EventHandler.__index = EventHandler
 local http_success = (pcall(require, "http_success.http_success") and require("http_success.http_success")) or load(http.get("https://mydevbox.cc/src/eventhandler/http_success/http_success.lua").readAll(), "http_success", "t", _G)()
 local http_failure = (pcall(require, "http_failure.http_failure") and require("http_failure.http_failure")) or load(http.get("https://mydevbox.cc/src/eventhandler/http_failure/http_failure.lua").readAll(), "http_failure", "t", _G)()
 
-
 -- Original functions
 local originalShutdown = _G.os.shutdown
 local originalReboot = _G.os.reboot
 
 eventHandler.onHttpSuccess = http_success.onHttpSuccess
 eventHandler.onHttpFailure = http_failure.onHttpFailure
-
 
 -- Listener for shutdown/reboot
 function EventHandler:onShutdown(callback)
@@ -69,6 +67,5 @@ function EventHandler:handle(event, ...)
         print("Unhandled event: " .. event)
     end
 end
-
 
 return EventHandler
