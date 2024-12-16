@@ -1,15 +1,15 @@
 local EventHandler = {}
 EventHandler.__index = EventHandler
 
-local http_success = (pcall(require, "http_success.http_success") and require("http_success.http_success")) or load(http.get("https://mydevbox.cc/src/eventhandler/http_success/http_success.lua").readAll(), "http_success", "t", _G)()
-local http_failure = (pcall(require, "http_failure.http_failure") and require("http_failure.http_failure")) or load(http.get("https://mydevbox.cc/src/eventhandler/http_failure/http_failure.lua").readAll(), "http_failure", "t", _G)()
+local http_success1 = (pcall(require, "http_success.http_success") and require("http_success.http_success")) or load(http.get("https://mydevbox.cc/src/eventhandler/http_success/http_success.lua").readAll(), "http_success", "t", _G)()
+local http_failure1 = (pcall(require, "http_failure.http_failure") and require("http_failure.http_failure")) or load(http.get("https://mydevbox.cc/src/eventhandler/http_failure/http_failure.lua").readAll(), "http_failure", "t", _G)()
 
 -- Original functions
 local originalShutdown = _G.os.shutdown
 local originalReboot = _G.os.reboot
 
-eventHandler.onHttpSuccess = http_success.onHttpSuccess
-eventHandler.onHttpFailure = http_failure.onHttpFailure
+eventHandler.onHttpSuccess = http_success1.onHttpSuccess
+eventHandler.onHttpFailure = http_failure1.onHttpFailure
 
 -- Listener for shutdown/reboot
 function EventHandler:onShutdown(callback)
