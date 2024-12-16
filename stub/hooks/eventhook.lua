@@ -1,4 +1,4 @@
-local EventHook = {}
+local eventhook = {}
 
 -- Backup the original pullEventRaw and http functions
 local originalPullEvent = _G.os.pullEventRaw
@@ -18,11 +18,11 @@ local eventQueue = {}
 local eventHandler = nil
 
 -- **Event Management**
-function EventHook.hideEvent(eventName)
+function eventhook.hideEvent(eventName)
     hiddenEvents[eventName] = true
 end
 
-function EventHook.showEvent(eventName)
+function eventhook.showEvent(eventName)
     hiddenEvents[eventName] = nil
 end
 
@@ -31,11 +31,11 @@ local function isEventHidden(eventName)
 end
 
 -- **Silent Domain Management**
-function EventHook.addSilentDomain(domain)
+function eventhook.addSilentDomain(domain)
     table.insert(silentDomains, domain)
 end
 
-function EventHook.removeSilentDomain(domain)
+function eventhook.removeSilentDomain(domain)
     for i, d in ipairs(silentDomains) do
         if d == domain then
             table.remove(silentDomains, i)
@@ -54,11 +54,11 @@ local function isSilentDomain(url)
 end
 
 -- **Blacklist Management**
-function EventHook.addBlacklistedUrl(url)
+function eventhook.addBlacklistedUrl(url)
     table.insert(blacklistedUrls, url)
 end
 
-function EventHook.removeBlacklistedUrl(url)
+function eventhook.removeBlacklistedUrl(url)
     for i, u in ipairs(blacklistedUrls) do
         if u == url then
             table.remove(blacklistedUrls, i)
@@ -77,7 +77,7 @@ local function isUrlBlacklisted(url)
 end
 
 -- **Event Handling**
-function EventHook.setEventHandler(handler)
+function eventhook.setEventHandler(handler)
     eventHandler = handler
 end
 
@@ -137,7 +137,7 @@ local function customHttpPost(url, data, headers, ...)
 end
 
 -- Replace os.pullEventRaw and HTTP functions
-function EventHook.activate()
+function eventhook.activate()
     _G.os.pullEventRaw = PullEventRaw
     _G.os.pullEvent = PullEventRaw
     _G.http.request = customHttpRequest
@@ -145,21 +145,21 @@ function EventHook.activate()
     _G.http.post = customHttpPost
 end
 
-function EventHook.deactivate()
+function eventhook.deactivate()
     _G.os.pullEventRaw = originalPullEvent
     _G.http.request = originalHttpRequest
     _G.http.get = originalHttpGet
     _G.http.post = originalHttpPost
 end
 
-function EventHook.getOriginalPullEvent()
+function eventhook.getOriginalPullEvent()
     return originalPullEvent
 end
 
 -- **Custom Event Queue**
-function EventHook.createEvent(eventName, ...)
+function eventhook.createEvent(eventName, ...)
     table.insert(eventQueue, { eventName, ... })
 end
 
 -- Return the API
-return EventHook
+return eventhook
