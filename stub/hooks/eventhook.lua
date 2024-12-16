@@ -108,6 +108,8 @@ local function PullEventRaw(filter)
                 -- If the handler returns a result, enqueue it for delivery
                 if result then
                     eventhook.createEvent(eventName, table.unpack(result))
+                else
+                    print("Result null")
                 end
             end
             -- Prevent the real event from being raised
