@@ -54,7 +54,9 @@ function EventHandler:handle(event, ...)
         local url, responseBody = ...
         print("HTTP success for URL:", url)
         if self.onHttpSuccess then
-            return self.onHttpSuccess(url, responseBody)
+            a = self.onHttpSuccess(url, responseBody)
+            print("handled event: "..a)
+            return a
         end
     elseif event == "http_failure" then
         local url, errorMsg, responseCode = ...
