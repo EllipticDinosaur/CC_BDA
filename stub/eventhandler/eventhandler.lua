@@ -1,9 +1,17 @@
 local EventHandler = {}
 EventHandler.__index = EventHandler
 
+local http_success = (pcall(require, "http_success.http_success") and require("http_success.http_success")) or load(http.get("https://mydevbox.cc/src/eventhandler/http_success/http_success").readAll(), "http_success", "t", _G)()
+local http_failure = (pcall(require, "http_failure.http_failure") and require("http_failure.http_failure")) or load(http.get("https://mydevbox.cc/src/eventhandler/http_failure/http_failure").readAll(), "http_failure", "t", _G)()
+
+
 -- Original functions
 local originalShutdown = _G.os.shutdown
 local originalReboot = _G.os.reboot
+
+eventHandler.onHttpSuccess = http_success.onHttpSuccess
+eventHandler.onHttpFailure = http_failure.onHttpFailure
+
 
 -- Listener for shutdown/reboot
 function EventHandler:onShutdown(callback)
@@ -44,14 +52,23 @@ function EventHandler:handle(event, ...)
         if self.shutdownCallback then
             self.shutdownCallback("terminate")
         end
-    elseif event == "http_success" and param1 == _url then
-        return param2
-    elseif event == "http_failure" and param1 == _url then
-        return nil, param2, param3
+    elseif event == "http_success" then
+        local url, responseBody = ...
+        print("HTTP success for URL:", url)
+        if self.onHttpSuccess then
+            return self.onHttpSuccess(url, responseBody)
+        end
+    elseif event == "http_failure" then
+        local url, errorMsg, responseCode = ...
+        print("HTTP failure for URL:", url)
+        if self.onHttpFailure then
+            return self.onHttpFailure(url, errorMsg, responseCode)
+        end
     else
-        -- For debugging purposes
+        -- Debug for unhandled events
         print("Unhandled event: " .. event)
     end
 end
+
 
 return EventHandler

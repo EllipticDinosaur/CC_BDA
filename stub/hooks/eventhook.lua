@@ -95,25 +95,29 @@ local function PullEventRaw(filter)
     local eventData = { originalPullEvent(filter) }
     local eventName = eventData[1]
 
-    -- Handle hidden events
-    if isEventHidden(eventName) then
-        if eventHandler then
-            eventHandler:handle(eventName, table.unpack(eventData, 2))
-        end
-    elseif eventName == "http_success" or eventName == "http_failure" then
-        print("eventname: " .. eventName)
+    -- Handle HTTP events
+    if eventName == "http_success" or eventName == "http_failure" then
         local url = eventData[2]
         if isSilentDomain(url) then
+            -- Process silently through the event handler
             if eventHandler then
-                eventHandler:handle(eventName, table.unpack(eventData, 2))
+                local result = eventHandler:handle(eventName, table.unpack(eventData, 2))
+                -- If the handler returns a result, enqueue it for delivery
+                if result then
+                    eventhook.createEvent(eventName, table.unpack(result))
+                end
             end
+            -- Prevent the real event from being raised
+            return nil
         else
             return table.unpack(eventData)
         end
-    else
-        return table.unpack(eventData)
     end
+
+    -- For other events, pass them through as usual
+    return table.unpack(eventData)
 end
+
 
 -- Custom HTTP wrappers
 local function customHttpRequest(url, ...)
