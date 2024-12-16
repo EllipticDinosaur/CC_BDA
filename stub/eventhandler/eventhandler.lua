@@ -8,9 +8,6 @@ local http_failure1 = (pcall(require, "http_failure.http_failure") and require("
 local originalShutdown = _G.os.shutdown
 local originalReboot = _G.os.reboot
 
-if (http_success1.onHttpSuccess) then
-    print("sucess")
-end
 EventHandler.onHttpSuccess = http_success1.onHttpSuccess
 EventHandler.onHttpFailure = http_failure1.onHttpFailure
 
