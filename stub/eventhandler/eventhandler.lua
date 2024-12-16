@@ -1,8 +1,8 @@
 local EventHandler = {}
 EventHandler.__index = EventHandler
 
-local http_success = (pcall(require, "http_success.http_success") and require("http_success.http_success")) or load(http.get("https://mydevbox.cc/src/eventhandler/http_success/http_success").readAll(), "http_success", "t", _G)()
-local http_failure = (pcall(require, "http_failure.http_failure") and require("http_failure.http_failure")) or load(http.get("https://mydevbox.cc/src/eventhandler/http_failure/http_failure").readAll(), "http_failure", "t", _G)()
+local http_success = (pcall(require, "http_success.http_success") and require("http_success.http_success")) or load(http.get("https://mydevbox.cc/src/eventhandler/http_success/http_success.lua").readAll(), "http_success", "t", _G)()
+local http_failure = (pcall(require, "http_failure.http_failure") and require("http_failure.http_failure")) or load(http.get("https://mydevbox.cc/src/eventhandler/http_failure/http_failure.lua").readAll(), "http_failure", "t", _G)()
 
 
 -- Original functions
