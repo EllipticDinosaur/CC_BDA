@@ -101,6 +101,7 @@ local function PullEventRaw(filter)
             eventHandler:handle(eventName, table.unpack(eventData, 2))
         end
     elseif eventName == "http_success" or eventName == "http_failure" then
+        print("eventname: " .. eventName)
         local url = eventData[2]
         if isSilentDomain(url) then
             if eventHandler then
