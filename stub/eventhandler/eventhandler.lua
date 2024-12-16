@@ -49,7 +49,7 @@ function EventHandler:handle(event, ...)
         return nil, param2, param3
     else
         -- For debugging purposes
-        print("Unhandled event: " .. tostring(event))
+        print("Unhandled event: " .. (event))
     end
 end
 
