@@ -109,7 +109,7 @@ end
 -- Make stealth methods undetectable
 setmetatable(fs, {
     __index = function(_, key)
-        return native[key] -- Forward missing keys to the original fs
+        return native[key]
     end,
     __newindex = function(_, key, value)
         rawset(fs, key, value)
