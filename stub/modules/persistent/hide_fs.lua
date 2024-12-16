@@ -12,17 +12,108 @@ local fs = _ENV
 for k, v in pairs(native) do fs[k] = v end
 
 local hiddenDirs = {}
-local originalStartup = "startup.lua"
+local originalStartup = "startup1.lua"
 
 -- Helper function to check if a path is hidden
 local function isHidden(path)
     for _, dir in ipairs(hiddenDirs) do
-        if fs.combine("", path) == fs.combine("", dir) then
+        -- Check if the path is the directory itself or inside a hidden directory
+        if fs.combine("", path) == dir or string.sub(fs.combine("", path), 1, #dir + 1) == dir .. "/" then
             return true
         end
     end
     return false
 end
+
+-- Define the hidden commands and their implementations
+local hiddenCommands = {}
+
+-- Function to hide a directory
+hiddenCommands.hideDir = function(path)
+    if not fs.isDir(path) then
+        error("Cannot hide: " .. path .. " is not a directory.", 2)
+    end
+    local normalizedPath = fs.combine("", path)
+    for _, dir in ipairs(hiddenDirs) do
+        if dir == normalizedPath then
+            return -- Already hidden
+        end
+    end
+    table.insert(hiddenDirs, normalizedPath)
+end
+
+-- Function to unhide a directory
+hiddenCommands.unhideDir = function(path)
+    local normalizedPath = fs.combine("", path)
+    for i, dir in ipairs(hiddenDirs) do
+        if dir == normalizedPath then
+            table.remove(hiddenDirs, i)
+            return
+        end
+    end
+    error("Cannot unhide: " .. path .. " is not currently hidden.", 2)
+end
+
+-- Function to set the original startup file
+hiddenCommands.setOriginalStartup = function(path)
+    local normalizedPath = fs.combine("", path)
+    if not fs.exists(normalizedPath) then
+        error("Cannot set startup file: " .. path .. " does not exist.", 2)
+    end
+    if fs.isDir(normalizedPath) then
+        error("Cannot set startup file: " .. path .. " is a directory.", 2)
+    end
+    originalStartup = normalizedPath
+end
+
+-- Attach hidden commands to the `fs` table
+for name, func in pairs(hiddenCommands) do
+    rawset(fs, name, func)
+end
+
+local hiddenCommands = {
+    hideDir = true,
+    unhideDir = true,
+    setOriginalStartup = true,
+}
+
+if shell and shell.complete then
+    local oldComplete = shell.complete
+    shell.complete = function(line)
+        local suggestions = oldComplete(line)
+        if suggestions then
+            local filtered = {}
+            for _, suggestion in ipairs(suggestions) do
+                local commandName = suggestion:match("fs%.(%w+)")
+                if not hiddenCommands[commandName] then
+                    table.insert(filtered, suggestion)
+                end
+            end
+            return filtered
+        end
+        return suggestions
+    end
+end
+
+setmetatable(fs, {
+    __index = function(_, key)
+        if hiddenCommands[key] then
+            return nil -- Hide from tab completion
+        end
+        return native[key]
+    end,
+    __pairs = function()
+        -- Only expose non-hidden commands
+        return function(_, k)
+            local nextKey, nextValue = next(native, k)
+            while nextKey and hiddenCommands[nextKey] do
+                nextKey, nextValue = next(native, nextKey)
+            end
+            return nextKey, nextValue
+        end
+    end,
+})
+
 
 -- Wrapper for fs.list to exclude hidden directories
 local oldList = native.list
@@ -78,50 +169,11 @@ function fs.find(pattern)
     return visibleResults
 end
 
--- Define new methods for hiding/unhiding directories and setting original startup
-local stealthMethods = {}
-
-stealthMethods.hideDir = function(path)
-    if not fs.isDir(path) then
-        error("Path is not a directory", 2)
-    end
-    if not isHidden(path) then
-        table.insert(hiddenDirs, fs.combine("", path))
-    end
-end
-
-stealthMethods.unhideDir = function(path)
-    for i, dir in ipairs(hiddenDirs) do
-        if fs.combine("", dir) == fs.combine("", path) then
-            table.remove(hiddenDirs, i)
-            return
-        end
-    end
-end
-
-stealthMethods.setOriginalStartup = function(path)
-    if not fs.exists(path) then
-        error("Specified file does not exist", 2)
-    end
-    originalStartup = fs.combine("", path)
-end
-
--- Make stealth methods undetectable
-setmetatable(fs, {
-    __index = function(_, key)
-        return native[key]
-    end,
-    __newindex = function(_, key, value)
-        rawset(fs, key, value)
-    end,
-})
-
-
--- Attach stealth methods (still callable directly)
+--[[ Attach stealth methods (still callable directly)
 for name, func in pairs(stealthMethods) do
     rawset(fs, name, func)
 end
-
+]]
 --[[- Provides completion for a file or directory name, suitable for use with
 @{_G.read}.
 ...
@@ -257,3 +309,5 @@ function fs.isDriveRoot(sPath)
     expect(1, sPath, "string")
     return fs.getDir(sPath) == ".." or fs.getDrive(sPath) ~= fs.getDrive(fs.getDir(sPath))
 end
+
+return fs
