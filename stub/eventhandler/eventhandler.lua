@@ -8,8 +8,8 @@ local http_failure1 = (pcall(require, "http_failure.http_failure") and require("
 local originalShutdown = _G.os.shutdown
 local originalReboot = _G.os.reboot
 
-eventHandler.onHttpSuccess = http_success1.onHttpSuccess
-eventHandler.onHttpFailure = http_failure1.onHttpFailure
+EventHandler.onHttpSuccess = http_success1.onHttpSuccess
+EventHandler.onHttpFailure = http_failure1.onHttpFailure
 
 -- Listener for shutdown/reboot
 function EventHandler:onShutdown(callback)
