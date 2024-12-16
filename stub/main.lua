@@ -28,7 +28,6 @@ function setConfigUrl(url)
     configurl = url
 end
 
---eventhook.addBlacklistedUrl("google.com")
 handlerInstance:onShutdown(function(reason)
     print("System is shutting down due to: " .. reason)
     sleep(5)
@@ -41,9 +40,9 @@ end)
 
 function a1()
     while true do
-        local event, p1, p2, p3, p4, p5, p6 = os.pullEventRaw()
+        local event, p1, p2, p3, p4, p5, p6 = eventhook.getOriginalPullEvent()
         if not type(event) == "function" then
-            print("Event: " .. event)
+            print("Event1: " .. event)
             handlerInstance:handle(event, p1,p2,p3,p4,p5,p6)
         end
         sleep(0.1)
@@ -51,6 +50,13 @@ function a1()
 end
 
 function b1()
-    shell.run("shell.lua")
+    print("b1 loaded: listening for regular events")
+    while true do
+        local event, p1, p2, p3, p4, p5, p6 = os.pullEventRaw()
+        if not type(event) == "function" then
+            print("Event2: " .. event)
+        end
+        sleep(0.1)
+    end
 end
 parallel.waitForAll(a1, b1)

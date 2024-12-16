@@ -81,6 +81,9 @@ function eventhook.setEventHandler(handler)
     eventHandler = handler
 end
 
+function eventhook.getOriginalPullEvent()
+    return originalPullEvent
+end
 -- Custom pullEventRaw
 local function PullEventRaw(filter)
     -- Process queued events first
