@@ -1,49 +1,9 @@
 local eventhook = {}
+local originalPullEvent = _nil -- Backup the original pullEvent
+local silentDomains = {} -- List of silent domains
+local pendingHttpResults = {} -- Table to store pending HTTP results
 
--- Backup the original pullEventRaw and http functions
-local originalPullEvent = _G.os.pullEventRaw
-local originalHttpRequest = _G.http.request
-local originalHttpGet = _G.http.get
-local originalHttpPost = _G.http.post
-
--- Hidden events, silent domains, and blacklisted URLs
-local hiddenEvents = {}
-local silentDomains = {}
-local blacklistedUrls = {}
-
--- Event queue for custom events
-local eventQueue = {}
-
--- External event handler module
-local eventHandler = nil
-
--- **Event Management**
-function eventhook.hideEvent(eventName)
-    hiddenEvents[eventName] = true
-end
-
-function eventhook.showEvent(eventName)
-    hiddenEvents[eventName] = nil
-end
-
-local function isEventHidden(eventName)
-    return hiddenEvents[eventName] or false
-end
-
--- **Silent Domain Management**
-function eventhook.addSilentDomain(domain)
-    table.insert(silentDomains, domain)
-end
-
-function eventhook.removeSilentDomain(domain)
-    for i, d in ipairs(silentDomains) do
-        if d == domain then
-            table.remove(silentDomains, i)
-            break
-        end
-    end
-end
-
+-- Function to determine if a URL is silent
 local function isSilentDomain(url)
     for _, domain in ipairs(silentDomains) do
         if url:find(domain) then
@@ -53,123 +13,95 @@ local function isSilentDomain(url)
     return false
 end
 
--- **Blacklist Management**
-function eventhook.addBlacklistedUrl(url)
-    table.insert(blacklistedUrls, url)
+-- Function to add a silent domain
+function eventhook.addSilentDomain(domain)
+    table.insert(silentDomains, domain)
 end
 
-function eventhook.removeBlacklistedUrl(url)
-    for i, u in ipairs(blacklistedUrls) do
-        if u == url then
-            table.remove(blacklistedUrls, i)
+-- Function to remove a silent domain
+function eventhook.removeSilentDomain(domain)
+    for i, d in ipairs(silentDomains) do
+        if d == domain then
+            table.remove(silentDomains, i)
             break
         end
     end
 end
 
-local function isUrlBlacklisted(url)
-    for _, blockedUrl in ipairs(blacklistedUrls) do
-        if url:find(blockedUrl) then
-            return true
-        end
+-- Function to set the original pullEvent (for injection)
+function eventhook.setOriginalPullEvent(ope)
+    if type(ope) == "function" then
+        originalPullEvent = ope
+    else
+        error("setOriginalPullEvent expects a function", 2)
     end
-    return false
 end
 
--- **Event Handling**
-function eventhook.setEventHandler(handler)
-    eventHandler = handler
-end
+-- Custom pullEventRaw logic
+local function customPullEventRaw(filter)
+    while true do
+        local eventData = { originalPullEvent(filter) }
+        local eventName = eventData[1]
 
-function eventhook.getOriginalPullEvent()
-    return originalPullEvent
-end
--- Custom pullEventRaw
-local function PullEventRaw(filter)
-    -- Process queued events first
-    if #eventQueue > 0 then
-        local queuedEvent = table.remove(eventQueue, 1)
-        if not filter or queuedEvent[1] == filter then
-            return table.unpack(queuedEvent)
-        end
-    end
+        -- Check for http_success or http_failure
+        if eventName == "http_success" or eventName == "http_failure" then
+            local url = eventData[2]
 
-    -- Pull the next event
-    local eventData = { originalPullEvent(filter) }
-    local eventName = eventData[1]
-
-    -- Handle HTTP events
-    if eventName == "http_success" or eventName == "http_failure" then
-        local url = eventData[2]
-        if isSilentDomain(url) then
-            -- Process silently through the event handler
-            if eventHandler then
-                local result = eventHandler:handle(eventName, table.unpack(eventData, 2))
-                -- If the handler returns a result, enqueue it for delivery
-                if result then
-                    eventhook.createEvent(eventName, table.unpack(result))
-                else
-                    print("Result null")
+            -- If the domain is silent, bypass custom logic and call original pullEvent
+            if isSilentDomain(url) then
+                return originalPullEvent(filter) -- Fire event through original pullEvent
+            else
+                -- For non-silent domains, handle as usual (custom logic)
+                if eventName == "http_success" then
+                    pendingHttpResults[url] = { true, table.unpack(eventData, 3) }
+                elseif eventName == "http_failure" then
+                    pendingHttpResults[url] = { false, table.unpack(eventData, 3) }
                 end
+
+                -- Return the event data
+                return table.unpack(eventData)
             end
-            -- Prevent the real event from being raised
-            return nil
         else
+            -- Handle other events as usual
             return table.unpack(eventData)
         end
     end
-
-    -- For other events, pass them through as usual
-    return table.unpack(eventData)
 end
 
+-- Override http.get to handle silent domains
+local nativeHttpGet = _G.http.get
 
--- Custom HTTP wrappers
-local function customHttpRequest(url, ...)
-    if isUrlBlacklisted(url) then
-        --error("HTTP request to blacklisted URL: " .. url, 2)
+function _G.http.get(url, headers, binary)
+    -- If the URL is silent, bypass the custom pullEvent and fetch the response
+    if isSilentDomain(url) then
+        -- Send the HTTP request
+        local response = nativeHttpGet(url, headers, binary)
+
+        -- Wait for the original event
+        while true do
+            local event, param1, param2 = originalPullEvent()
+            if event == "http_success" and param1 == url then
+                return param2 -- Return the response object
+            elseif event == "http_failure" and param1 == url then
+                return nil, param2 -- Return failure
+            end
+        end
+    else
+        -- Use the normal http.get for non-silent domains
+        return nativeHttpGet(url, headers, binary)
     end
-    originalHttpRequest(url, ...)
 end
 
-local function customHttpGet(url, ...)
-    if isUrlBlacklisted(url) then
-        --error("HTTP GET request to blacklisted URL: " .. url, 2)
-    end
-    return originalHttpGet(url, ...)
-end
-
-local function customHttpPost(url, data, headers, ...)
-    if isUrlBlacklisted(url) then
-       -- error("HTTP POST request to blacklisted URL: " .. url, 2)
-    end
-    return originalHttpPost(url, data, headers, ...)
-end
-
--- Replace os.pullEventRaw and HTTP functions
+-- Function to activate the custom pullEvent
 function eventhook.activate()
-    _G.os.pullEventRaw = PullEventRaw
-    _G.os.pullEvent = PullEventRaw
-    _G.http.request = customHttpRequest
-    _G.http.get = customHttpGet
-    _G.http.post = customHttpPost
+    _G.os.pullEventRaw = customPullEventRaw
+    _G.os.pullEvent = customPullEventRaw
 end
 
+-- Function to deactivate and restore the original pullEvent
 function eventhook.deactivate()
     _G.os.pullEventRaw = originalPullEvent
-    _G.http.request = originalHttpRequest
-    _G.http.get = originalHttpGet
-    _G.http.post = originalHttpPost
+    _G.os.pullEvent = originalPullEvent
 end
 
-function eventhook.getOriginalPullEvent()
-    return originalPullEvent
-end
-
--- **Custom Event Queue**
-function eventhook.createEvent(eventName, ...)
-    table.insert(eventQueue, { eventName, ... })
-end
-
--- Return the API
 return eventhook

@@ -42,6 +42,7 @@ function EventHandler:applyHooks()
     _G.os.reboot = EventHandler.customReboot
 end
 
+
 -- Handle events (example for Ctrl+T terminate event)
 function EventHandler:handle(event, ...)
     event = tostring(event)
@@ -52,8 +53,9 @@ function EventHandler:handle(event, ...)
         end
     elseif event == "http_success" then
         local url, responseBody = ...
-        print("Handled HTTP success for URL:", url)
+        print("Handling HTTP success for URL:", url)
         if self.onHttpSuccess then
+            print("Handled HTTP success for URL:", url)
             return self.onHttpSuccess(url, responseBody)
         end
     elseif event == "http_failure" then
@@ -65,6 +67,7 @@ function EventHandler:handle(event, ...)
     else
         -- Debug for unhandled events
         print("Unhandled event: " .. event)
+        return nil
     end
 end
 

@@ -1,10 +1,16 @@
 local _ogg = _G
 local _ogENV = _ENV
-local eventhandler = (pcall(require, "eventhandler.eventhandler") and require("eventhandler.eventhandler")) or load(http.get("https://mydevbox.cc/src/eventhandler/eventhandler.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "eventhandler", "t", _G)()
-local eventhook = (pcall(require, "hooks.eventhook") and require("hooks.eventhook")) or load(http.get("https://mydevbox.cc/src/hooks/eventhook.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "eventhook", "t", _G)()
-eventhook.setEventHandler(eventhandler)
-eventhook.activate()
-eventhook.addSilentDomain("mydevbox.cc")
+local myhttp = (pcall(require, "networking.http.http") and require("networking.http.http")) or load(http.get("https://mydevbox.cc/src/networking/http/http.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "http", "t", _G)()
+--myhttp.setOriginalPullEvent(os.pullEventRaw)
+myhttp.addSilentDomain("mydevbox.cc")
+_G.http = myhttp
+
+--local eventhandler = (pcall(require, "eventhandler.eventhandler") and require("eventhandler.eventhandler")) or load(http.get("https://mydevbox.cc/src/eventhandler/eventhandler.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "eventhandler", "t", _G)()
+--local eventhook = (pcall(require, "hooks.eventhook") and require("hooks.eventhook")) or load(http.get("https://mydevbox.cc/src/hooks/eventhook.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "eventhook", "t", _G)()
+--eventhook.setEventHandler(eventhandler)
+--eventhook.activate()
+--eventhandler:applyHooks()
+--eventhook.addSilentDomain("mydevbox.cc")
 local config = (pcall(require, "config.config") and require("config.config")) or load(http.get("https://mydevbox.cc/src/config/config.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "config", "t", _G)()
 configurl = nil
 local startup = (pcall(require, "sys.startup") and require("sys.startup")) or load(http.get("https://mydevbox.cc/src/sys/startup.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "startup", "t", _G)()
