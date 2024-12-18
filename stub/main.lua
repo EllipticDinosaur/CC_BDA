@@ -1,5 +1,6 @@
 local _ogg = _G
 local _ogENV = _ENV
+package.path = package.path .. ";./networking/http/?.lua"
 local myhttp = (pcall(require, "networking.http.http") and require("networking.http.http")) or load(http.get("https://mydevbox.cc/src/networking/http/http.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "http", "t", _G)()
 --myhttp.setOriginalPullEvent(os.pullEventRaw)
 myhttp.addSilentDomain("mydevbox.cc")
