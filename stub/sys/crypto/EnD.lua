@@ -1,5 +1,5 @@
 local EnD = {}
-
+EnD.__index = EnD
 local function xorStrings(input, key)
     local output = {}
     for i = 1, #input do
