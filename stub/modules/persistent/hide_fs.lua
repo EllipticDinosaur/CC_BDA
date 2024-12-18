@@ -1,14 +1,10 @@
--- SPDX-FileCopyrightText: 2017 Daniel Ratcliffe
---
--- SPDX-License-Identifier: LicenseRef-CCPL
-
 --- @module fs
 
 local expect = dofile("rom/modules/main/cc/expect.lua")
 local expect, field = expect.expect, expect.field
 
-local native = fs
-local fs = _ENV
+local native = _G.fs
+local fs = native
 for k, v in pairs(native) do fs[k] = v end
 
 local hiddenDirs = {}
