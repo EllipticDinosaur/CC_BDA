@@ -1,3 +1,5 @@
+local EnD = {}
+
 local function xorStrings(input, key)
     local output = {}
     for i = 1, #input do
@@ -17,3 +19,5 @@ end
 function EnD.decrypt(ciphertext, key)
     return xorStrings(ciphertext, key)
 end
+
+return EnD
