@@ -5,6 +5,7 @@ local originalPullEvent = _nil
 local originalPullEventRaw = _nil
 local magicUrls = {} -- realURL, magicURL, magicKey
 
+
 function eventhook.getMagicURLs()
     return magicUrls
 end
@@ -33,19 +34,11 @@ function eventhook.removeMagicEntryByUrl(url)
 end
 
 function eventhook.setOriginalPullEvent(ope)
-    --if type(ope) == "function" then
         originalPullEvent = ope
-   -- else
-   --     error("setOriginalPullEvent expects a function", 2)
-  --  end
 end
 
 function eventhook.setOriginalPullEventRaw(oper)
-   --if type(ope) == "function" then
         originalPullEventRaw = oper
-   -- else
-     --   error("setOriginalPullEvent expects a function", 2)
-    --end
 end
 
 
