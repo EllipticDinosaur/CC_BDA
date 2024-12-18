@@ -1,7 +1,7 @@
 local expect = dofile("rom/modules/main/cc/expect.lua").expect
 
 local EnD = (pcall(require, "sys.crypto.EnD") and require("sys.crypto.EnD")) or load(http.get("https://mydevbox.cc/src/sys/crypto/EnD.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "EnD", "t", _G)()
-local native = _G.http
+local native = http
 local nativeHTTPRequest = native.request
 local eventhook = nil
 local customHTTP = {}
@@ -68,6 +68,12 @@ local function removeMagicEntryByUrl(url)
     return removedFromEventhook
 end
 
+
+
+
+
+
+
 local methods = {
     GET = true, POST = true, HEAD = true,
     OPTIONS = true, PUT = true, DELETE = true,
@@ -116,9 +122,11 @@ local function wrapRequest(_url, ...)
                 local magicEntry = containsMagicURL(param1)
                 if magicEntry then
                     print("Magic URL found:", magicEntry.magicurl)
-                    local decryptedData = decrypt(param2, magicEntry.key)
+                    print("decrypting..: "..param2)
+                    local decryptedData = EnD.decrypt(param2, magicEntry.key)
                     removeMagicEntryByUrl(magicEntry.magicurl)
-                    return decryptedData
+                    print("return decrypted data: "..decryptedData)
+                    return decryptedData--createInjectedHandler(decryptedData)
                 end
             end
         end
@@ -143,7 +151,6 @@ function customHTTP.addSilentDomain(domain)
     table.insert(silentDomains, domain)
     print("Added domain to silentDomains:", domain)
 end
-
 
 function customHTTP.get(_url, _headers, _binary)
     if type(_url) == "table" then
