@@ -128,13 +128,28 @@ local function customPullEvent(filter)
     while true do
         local eventData = table.pack(originalPullEvent(filter))
         local eventName = eventData[1]
-        --if eventName == "http_success" or eventName == "http_failure" then
-            --local silentqueue = _G[mycustomQueueEvent]
-           -- silentqueue(eventName, table.unpack(eventData))
-          --  return ""
-       -- else
+        if eventName == "http_success" or eventName == "http_failure" then
+            local url = eventData[2]
+            local magicEntry = findMagicEntry(url)
+            if magicEntry then
+                local renamedURL = magicEntry.magicurl
+                if type(eventData[3]) == "table" then
+                    local responseCode = eventData[3].getResponseCode()
+                    local responseHeader = eventData[3].getResponseHeaders()
+                    local responseData = eventData[3].readAll()
+                    if responseData then
+                        rebuild = createInjectedHandler(responseHeader, responseCode, EnD.encrypt(responseData, magicEntry.key))
+                        eventhook.removeMagicEntryByUrl(magicEntry.magicurl)
+                        return eventData[1],renamedURL,rebuild
+                    end
+                end
+                return table.unpack(eventData)
+            end
+            
             return table.unpack(eventData)
-       -- end
+        else
+            return table.unpack(eventData)
+        end
     end
 end
 
@@ -158,7 +173,6 @@ local function customPullEventRaw(sFilter)
                         return eventData[1],renamedURL,rebuild
                     end
                 end
-               
                 return table.unpack(eventData)
             end
             

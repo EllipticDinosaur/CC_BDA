@@ -190,7 +190,7 @@ local function wrapRequest(_url, ...)
             addMagicURLWithKey(_url)
         end
         while true do
-            local event, param1, param2, param3 = os.pullEventRaw()
+            local event, param1, param2, param3 = os.pullEvent()
             if event == "http_success" and param1 == _url then
                 return param2
             elseif event == "http_failure" and param1 == _url then
