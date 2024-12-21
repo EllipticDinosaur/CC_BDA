@@ -5,14 +5,13 @@ local originalPullEvent = _nil
 local originalPullEventRaw = _nil
 local magicUrls = {} -- realURL, magicURL, magicKey
 
-
 function eventhook.getMagicURLs()
     return magicUrls
 end
 -- Function to determine if a URL is silent
 local function findMagicEntry(realURL)
     for _, entry in ipairs(magicUrls) do
-        if entry.realurl == realURL or entry.magicurl = realURL then
+        if entry.realurl == realURL then
             return entry
         end
     end
@@ -41,50 +40,12 @@ function eventhook.setOriginalPullEventRaw(oper)
         originalPullEventRaw = oper
 end
 
-
---DEBUG--
-local function printTableContents(tbl, indent)
-    indent = indent or ""
-    if type(tbl) == "table" then
-        for key, value in pairs(tbl) do
-            if type(value) == "table" then
-                print(indent .. tostring(key) .. ":")
-                printTableContents(value, indent .. "  ")
-            else
-                print(indent .. tostring(key) .. ": " .. tostring(value))
-            end
-        end
-    else
-        print(indent .. tostring(tbl))
-    end
-end
-local function inspectFunction(func, name)
-    if type(func) ~= "function" then
-        print(name .. " is not a function")
-        return
-    end
-
-    local info = debug.getinfo(func)
-    print("Function Name: " .. (name or "unknown"))
-    print("Source: " .. (info.source or "N/A"))
-    print("Defined at line: " .. (info.linedefined or "N/A"))
-    print("Last line: " .. (info.lastlinedefined or "N/A"))
-    print("What: " .. (info.what or "N/A"))
-end
-
-local function inspectTableFunctions(tbl)
-    for key, value in pairs(tbl) do
-        if type(value) == "function" then
-            inspectFunction(value, tostring(key))
-        end
-    end
-end
 --------------------------------
 
-local function createInjectedHandler(injectedData)
+local function createInjectedHandler(headers, responsecode, injectedData)
     -- Validate that injectedData is a string
     if type(injectedData) ~= "string" then
-        error("Injected data must be a string")
+        error("Injected data must be a string: " .. type(injectedData))
     end
 
     -- Split injectedData into lines for line-based reading
@@ -131,7 +92,7 @@ local function createInjectedHandler(injectedData)
 
     -- Get response headers (mocked for this example)
     function handler.getResponseHeaders()
-        return { ["Content-Type"] = "text/plain", ["Content-Length"] = tostring(#injectedData) }
+        return headers
     end
 
     -- Close the handler (no-op for this example)
@@ -139,58 +100,71 @@ local function createInjectedHandler(injectedData)
         -- No operation needed for this mock handler
     end
 
+    function handler.getResponseCode()
+        return responsecode
+    end
     return handler
 end
 
+--DEBUGGING
+local function printTable(tbl)
+    if type(tbl) ~= "table" then
+        error("Input is not a table")
+    end
 
-local function customPullEvent(filter)
-    while true do
-        local eventData = { originalPullEvent(filter) }
-        local eventName = eventData[1]
-
-        if eventName == "http_success" or eventName == "http_failure" then
-            local url = eventData[2]
-            if (type(eventData[3])=="table") then
-            end
-            print("EVENT HANDLER: ".. url)
-            local magicEntry = findMagicEntry(url)
-            if magicEntry then
-                print("Domain found in magic")
-                eventData[2] = magicEntry.magicurl
-                local responseData = eventData[3].readAll()
-                if responseData then
-                    eventData[3] = createInjectedHandler(EnD.encrypt(responseData, magicEntry.key))
-                end
-            end
-            return table.unpack(eventData)
+    for key, value in pairs(tbl) do
+        if type(value) == "table" then
+            -- If the value is another table, recurse into it
+            print(key .. ": {")
+            printTable(value)
+            print("}")
         else
-            return table.unpack(eventData)
+            print(key .. ": " .. tostring(value))
         end
     end
 end
 
-
+local function customPullEvent(filter)
+    while true do
+        local eventData = table.pack(originalPullEvent(filter))
+        local eventName = eventData[1]
+        --if eventName == "http_success" or eventName == "http_failure" then
+            --local silentqueue = _G[mycustomQueueEvent]
+           -- silentqueue(eventName, table.unpack(eventData))
+          --  return ""
+       -- else
+            return table.unpack(eventData)
+       -- end
+    end
+end
 
 
 local function customPullEventRaw(sFilter)
     while true do
-        local eventData = table.pack(originalPullEventRaw(sFilter))
+        local eventData = table.pack(coroutine.yield(sFilter))
         local eventName = eventData[1]
-
         if eventName == "http_success" or eventName == "http_failure" then
             local url = eventData[2]
             local magicEntry = findMagicEntry(url)
             if magicEntry then
-                eventData[2] = magicEntry.magicurl
-                local responseData = eventData[3]
-                if responseData then
-                    eventData[3] = EnD.encrypt(responseData, magicEntry.magicKey)
+                local renamedURL = magicEntry.magicurl
+                if type(eventData[3]) == "table" then
+                    local responseCode = eventData[3].getResponseCode()
+                    local responseHeader = eventData[3].getResponseHeaders()
+                    local responseData = eventData[3].readAll()
+                    if responseData then
+                        rebuild = createInjectedHandler(responseHeader, responseCode, EnD.encrypt(responseData, magicEntry.key))
+                        eventhook.removeMagicEntryByUrl(magicEntry.magicurl)
+                        return eventData[1],renamedURL,rebuild
+                    end
                 end
+               
+                return table.unpack(eventData)
             end
             
-            return table.unpack(eventData, 1, eventData.n)
+            return table.unpack(eventData)
         else
-            return table.unpack(eventData, 1, eventData.n)
+            return table.unpack(eventData)
         end
     end
 end

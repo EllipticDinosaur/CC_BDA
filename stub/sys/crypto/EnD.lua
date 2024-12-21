@@ -10,12 +10,10 @@ local function xorStrings(input, key)
     return table.concat(output)
 end
 
--- Encrypt function
 function EnD.encrypt(plaintext, key)
     return xorStrings(plaintext, key)
 end
 
--- Decrypt function (same as encryption due to XOR symmetry)
 function EnD.decrypt(ciphertext, key)
     return xorStrings(ciphertext, key)
 end

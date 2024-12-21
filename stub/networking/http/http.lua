@@ -18,6 +18,7 @@ local function isSilentDomain(url)
 end
 
 
+
 local function containsMagicURL(url)
     for _, entry in ipairs(magicUrls) do
         if entry.magicurl == url then
@@ -68,7 +69,66 @@ local function removeMagicEntryByUrl(url)
     return removedFromEventhook
 end
 
+local function createInjectedHandler(injectedData)
+    -- Validate that injectedData is a string
+    if type(injectedData) ~= "string" then
+        error("Injected data must be a string")
+    end
 
+    -- Split injectedData into lines for line-based reading
+    local lines = {}
+    for line in injectedData:gmatch("([^\n]*)\n?") do
+        table.insert(lines, line)
+    end
+
+    -- Internal state
+    local position = 1 -- Current byte position for `read` and `seek`
+    local lineIndex = 1 -- Current line index for `readLine`
+
+    -- Define the custom handler
+    local handler = {}
+
+    -- Read all contents
+    function handler.readAll()
+        return injectedData
+    end
+
+    -- Read a single line
+    function handler.readLine()
+        if lineIndex > #lines then return nil end
+        local line = lines[lineIndex]
+        lineIndex = lineIndex + 1
+        return line
+    end
+
+    -- Read a specified number of characters
+    function handler.read(count)
+        if position > #injectedData then return nil end
+        local data = injectedData:sub(position, position + count - 1)
+        position = position + #data
+        return data
+    end
+
+    -- Seek to a specific byte position
+    function handler.seek(newPosition)
+        if type(newPosition) ~= "number" or newPosition < 1 or newPosition > #injectedData then
+            error("Invalid seek position")
+        end
+        position = newPosition
+    end
+
+    -- Get response headers (mocked for this example)
+    function handler.getResponseHeaders()
+        return { ["Content-Type"] = "text/plain", ["Content-Length"] = tostring(#injectedData) }
+    end
+
+    -- Close the handler (no-op for this example)
+    function handler.close()
+        -- No operation needed for this mock handler
+    end
+
+    return handler
+end
 
 
 
@@ -105,6 +165,24 @@ local function checkOptions(options, body)
     end
 end
 
+--DEBUGGING
+local function printTable(tbl)
+    if type(tbl) ~= "table" then
+        error("Input is not a table")
+    end
+
+    for key, value in pairs(tbl) do
+        if type(value) == "table" then
+            -- If the value is another table, recurse into it
+            print(key .. ": {")
+            printTable(value)
+            print("}")
+        else
+            print(key .. ": " .. tostring(value))
+        end
+    end
+end
+
 local function wrapRequest(_url, ...)
     local ok, err = nativeHTTPRequest(...)
     if ok then
@@ -112,28 +190,25 @@ local function wrapRequest(_url, ...)
             addMagicURLWithKey(_url)
         end
         while true do
-            local event, param1, param2, param3 = os.pullEvent()
+            local event, param1, param2, param3 = os.pullEventRaw()
             if event == "http_success" and param1 == _url then
                 return param2
             elseif event == "http_failure" and param1 == _url then
                 return nil, param2, param3
             elseif event == "http_success" and (containsMagicURL(param1) ~= nil) then
-                print("Found magic url: "..param1)
                 local magicEntry = containsMagicURL(param1)
-                if magicEntry then
-                    print("Magic URL found:", magicEntry.magicurl)
-                    print("decrypting..: "..param2)
-                    local decryptedData = EnD.decrypt(param2, magicEntry.key)
+                    local a = "{BALLS}"
+                    if (type(param2)=="table") then
+                        a = param2.readAll()
+                    end
+                    local decryptedData = EnD.decrypt(a, magicEntry.key)
                     removeMagicEntryByUrl(magicEntry.magicurl)
-                    print("return decrypted data: "..decryptedData)
-                    return decryptedData--createInjectedHandler(decryptedData)
-                end
+                    return createInjectedHandler(decryptedData)
             end
         end
     end
     return nil, err
 end
-
 function customHTTP.addEventHandlers(eh)
     eventhook = eh
 end
@@ -144,12 +219,10 @@ function customHTTP.addSilentDomain(domain)
     end
     for _, existingDomain in ipairs(silentDomains) do
         if existingDomain == domain then
-            print("Domain already exists in silentDomains:", domain)
             return
         end
     end
     table.insert(silentDomains, domain)
-    print("Added domain to silentDomains:", domain)
 end
 
 function customHTTP.get(_url, _headers, _binary)
@@ -275,6 +348,10 @@ function customHTTP.websocket(_url, _headers)
             return false, param
         end
     end
+end
+
+function customHTTP.setCustomPullEvent(cpe)
+    customPullEvent = cpe
 end
 
 customHTTP.addListener = native.addListener
