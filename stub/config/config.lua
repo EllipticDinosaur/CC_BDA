@@ -29,7 +29,6 @@ end
 
 -- Download and load configuration from a URL
 function config:DownloadConfig(url)
-    print("Downloading configuration from: " .. url)
     local fetchedConfig = fetchJSON(url)
     if not fetchedConfig or type(fetchedConfig) ~= "table" then
         error("Invalid configuration format received.")
@@ -62,7 +61,6 @@ function config:get(path)
         end
         value = value[key]
     end
-
     return value
 end
 

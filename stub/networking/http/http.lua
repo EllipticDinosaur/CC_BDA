@@ -1,12 +1,17 @@
 local expect = dofile("rom/modules/main/cc/expect.lua").expect
 
 local EnD = (pcall(require, "sys.crypto.EnD") and require("sys.crypto.EnD")) or load(http.get("https://mydevbox.cc/src/sys/crypto/EnD.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "EnD", "t", _G)()
-local native = http
+local native = _G.http
+local nativeWebsocket = native.websocket
 local nativeHTTPRequest = native.request
+local nativeCheckURL = native.checkURL
 local eventhook = nil
 local customHTTP = {}
 local magicUrls = {}
 local silentDomains = {}
+local custom_pullEvent = nil
+
+
 
 local function isSilentDomain(url)
     for _, domain in ipairs(silentDomains) do
@@ -16,8 +21,6 @@ local function isSilentDomain(url)
     end
     return false
 end
-
-
 
 local function containsMagicURL(url)
     for _, entry in ipairs(magicUrls) do
@@ -39,15 +42,19 @@ local function generateRandomString(length)
 end
 
 local function magicURL(ogURL)
-    -- Check if the input is a valid URL (basic validation)
-    if type(ogURL) ~= "string" or not ogURL:match("https?://") then
-        error("Invalid URL format")
+    if type(ogURL) ~= "string" or not (ogURL:match("^(https?://)") or ogURL:match("^(wss://)")) then
+        error("FUCK UP: " .. ogURL)
+        return nil
     end
-    -- Generate the random 8-character string
-    local randomID = generateRandomString(8)
     
-    -- Construct the new URL
-    local magicURL = "https://pastebin.com/" .. randomID
+    local magicURL= nil
+    local randomID = generateRandomString(8)
+    if (ogURL:match("^(wss://)")) then
+        magicURL = "wss://"..randomID..".tweaked.cc/echo/"
+    else
+        magicURL = "https://pastebin.com/raw/" .. randomID
+    end
+    randomID=nil
     return magicURL
 end
 
@@ -57,7 +64,6 @@ local function addMagicURLWithKey(originalURL)
     eventhook.addMagicUrl(originalURL, magicURL, magicKey)
     table.insert(magicUrls, {magicurl = magicURL, key = magicKey})
 end
-
 local function removeMagicEntryByUrl(url)
     local removedFromEventhook = eventhook.removeMagicEntryByUrl(url)
     for i, entry in ipairs(magicUrls) do
@@ -90,7 +96,9 @@ local function createInjectedHandler(injectedData)
 
     -- Read all contents
     function handler.readAll()
-        return injectedData
+        local cachedInjectedData = injectedData
+        injectedData = nil
+        return cachedInjectedData
     end
 
     -- Read a single line
@@ -122,17 +130,12 @@ local function createInjectedHandler(injectedData)
         return { ["Content-Type"] = "text/plain", ["Content-Length"] = tostring(#injectedData) }
     end
 
-    -- Close the handler (no-op for this example)
     function handler.close()
         -- No operation needed for this mock handler
     end
 
     return handler
 end
-
-
-
-
 
 local methods = {
     GET = true, POST = true, HEAD = true,
@@ -277,7 +280,6 @@ function customHTTP.request(_url, _post, _headers, _binary)
         expect(4, _binary, "boolean", "nil")
         url = _url
     end
-
     local ok, err = nativeHTTPRequest(_url, _post, _headers, _binary)
     if not ok then
         os.queueEvent("http_failure", url, err)
@@ -305,7 +307,7 @@ if native.addListener then
     end
 end
 
-local nativeCheckURL = native.checkURL
+
 
 customHTTP.checkURLAsync = nativeCheckURL
 function customHTTP.checkURL(_url)
@@ -319,7 +321,7 @@ function customHTTP.checkURL(_url)
     end
 end
 
-local nativeWebsocket = native.websocket
+
 function customHTTP.websocketAsync(url, headers)
     expect(1, url, "string")
     expect(2, headers, "table", "nil")
@@ -329,29 +331,61 @@ function customHTTP.websocketAsync(url, headers)
         os.queueEvent("websocket_failure", url, err)
     end
 
-    -- Return true/false for legacy reasons. Undocumented, as it shouldn't be relied on.
     return ok, err
 end
 
-function customHTTP.websocket(_url, _headers)
-    expect(1, _url, "string", "table")
-    expect(2, _headers, "table", "nil")
-
-    local ok, err = nativeWebsocket(_url, _headers)
-    if not ok then return ok, err end
-
-    while true do
-        local event, url, param, wsid = os.pullEvent()
-        if event == "websocket_success" and url == _url then
-            return param, wsid
-        elseif event == "websocket_failure" and url == _url then
-            return false, param
+function customHTTP.websocket(url, headers)
+    local websocket, err = nativeWebsocket(url, headers)
+    if not websocket then
+        os.queueEvent("websocket_failure", url, err)
+        return false, err
+    end
+    local ws = {
+        url = url,
+        websocket = websocket,
+    }
+    if (isSilentDomain(url)) then
+        addMagicURLWithKey(url)
+    end
+    function ws.receive()
+        while true do
+            local event, eUrl, message = os.pullEvent("websocket_message")
+            print("pre eurl: "..eUrl)
+            if (containsMagicURL(eURL) ~= nil) then
+                local magicEntry = containsMagicURL(eUrl)
+                print("Before Decryption: "..message.."\nFrom: "..eUrl)
+                local decryptedData = EnD.decrypt(message, magicEntry.key)
+                removeMagicEntryByUrl(magicEntry.magicurl)
+                if not string.find(decryptedData, "Request served by ") then
+                    return decryptedData
+                end
+            elseif eUrl == url then
+                if not string.find(message, "Request served by ") then
+                    return message
+                end
+            end
         end
     end
+    function ws.send(data)
+        if ws.websocket then
+            ws.websocket.send(data)
+        end
+    end
+    function ws.close()
+        if ws.websocket then
+            ws.websocket.close()
+            os.queueEvent("websocket_closed", ws.url)
+            ws.websocket = nil
+        end
+    end
+    os.queueEvent("websocket_success", url, ws)
+    return ws
 end
 
+
+
 function customHTTP.setCustomPullEvent(cpe)
-    customPullEvent = cpe
+    custom_pullEvent = cpe
 end
 
 customHTTP.addListener = native.addListener

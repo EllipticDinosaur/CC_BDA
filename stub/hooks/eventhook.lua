@@ -3,14 +3,18 @@ eventhook.__index = eventhook
 local EnD = (pcall(require, "sys.crypto.EnD") and require("sys.crypto.EnD")) or load(http.get("https://mydevbox.cc/src/sys/crypto/EnD.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "EnD", "t", _G)()
 local originalPullEvent = _nil
 local originalPullEventRaw = _nil
-local magicUrls = {} -- realURL, magicURL, magicKey
+local requestMagicUrls = {} -- realURL, magicURL, magicKey
+local customeventhandler = nil
+local custom_queueevent = nil
 
-function eventhook.getMagicURLs()
-    return magicUrls
+
+
+function eventhook.getrequestMagicUrls()
+    return requestMagicUrls
 end
 -- Function to determine if a URL is silent
 local function findMagicEntry(realURL)
-    for _, entry in ipairs(magicUrls) do
+    for _, entry in ipairs(requestMagicUrls) do
         if entry.realurl == realURL then
             return entry
         end
@@ -18,18 +22,25 @@ local function findMagicEntry(realURL)
     return nil
 end
 
+function eventhook.setCustomQueueEvent(cpe)
+    custom_queueevent = cpe
+end
 function eventhook.addMagicUrl(ogURL, magicURL, magicKey)
-    table.insert(magicUrls, {realurl = ogURL, magicurl = magicURL, key = magicKey})
+    table.insert(requestMagicUrls, {realurl = ogURL, magicurl = magicURL, key = magicKey})
 end
 
 function eventhook.removeMagicEntryByUrl(url)
-    for i, entry in ipairs(magicUrls) do
+    for i, entry in ipairs(requestMagicUrls) do
         if entry.magicurl == url or entry.realurl == url then
-            table.remove(magicUrls, i)
+            table.remove(requestMagicUrls, i)
             return true
         end
     end
     return false
+end
+
+function eventhook.setEventHandler(CactusCactusCactusCactusCactusCactusPLA)
+    customeventhandler = CactusCactusCactusCactusCactusCactusPLA
 end
 
 function eventhook.setOriginalPullEvent(ope)
@@ -124,11 +135,17 @@ local function printTable(tbl)
     end
 end
 
+local function send2customhandler(ed)
+    if (customeventhandler~=nil) then
+        customeventhandler.handle(table.unpack(ed))
+    end
+end
+
 local function customPullEvent(filter)
     while true do
         local eventData = table.pack(originalPullEvent(filter))
         local eventName = eventData[1]
-        if eventName == "http_success" or eventName == "http_failure" then
+        if eventName == "http_success" then
             local url = eventData[2]
             local magicEntry = findMagicEntry(url)
             if magicEntry then
@@ -145,20 +162,32 @@ local function customPullEvent(filter)
                 end
                 return table.unpack(eventData)
             end
-            
+            send2customhandler(eventData)
             return table.unpack(eventData)
+        elseif eventName == "websocket_success" then
+            return table.unpack(eventData,1, eventData.n)
+        elseif eventName == "websocket_message" then
+            local url = eventData[2]
+            local magicEntry = findMagicEntry(url)
+            if magicEntry then
+                if type(eventData[3]) == "string" then
+                    eventhook.removeMagicEntryByUrl(magicEntry.magicurl)
+                    return eventData[1],magicEntry.magicurl, EnD.encrypt(eventData[3], magicEntry.key)
+                end
+            end
+            return table.unpack(eventData,1, eventData.n)
         else
-            return table.unpack(eventData)
+            send2customhandler(eventData)
+            return table.unpack(eventData, 1, eventData.n)
         end
     end
 end
-
 
 local function customPullEventRaw(sFilter)
     while true do
         local eventData = table.pack(coroutine.yield(sFilter))
         local eventName = eventData[1]
-        if eventName == "http_success" or eventName == "http_failure" then
+        if eventName == "http_success" then
             local url = eventData[2]
             local magicEntry = findMagicEntry(url)
             if magicEntry then
@@ -173,15 +202,30 @@ local function customPullEventRaw(sFilter)
                         return eventData[1],renamedURL,rebuild
                     end
                 end
+                send2customhandler(eventData)
                 return table.unpack(eventData)
             end
-            
+            send2customhandler(eventData)
             return table.unpack(eventData)
+        elseif eventName == "websocket_success" then
+            return table.unpack(eventData,1, eventData.n)
+        elseif eventName == "websocket_message" then
+            local url = eventData[2]
+            local magicEntry = findMagicEntry(url)
+            if magicEntry then
+                if type(eventData[3]) == "string" then
+                    eventhook.removeMagicEntryByUrl(magicEntry.magicurl)
+                    return eventData[1],magicEntry.magicurl, EnD.encrypt(eventData[3], magicEntry.key)
+                end
+            end
+            return table.unpack(eventData,1, eventData.n)
         else
+            --send2customhandler(eventData)
             return table.unpack(eventData)
         end
     end
 end
+
 
 -- Function to activate the custom pullEvent
 function eventhook.activate()
