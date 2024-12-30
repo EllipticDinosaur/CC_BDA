@@ -1,4 +1,5 @@
 import random
+import base64
 
 class RSA:
     def generate_keys(self):
@@ -47,9 +48,11 @@ class RSA:
     def encrypt(self, public_key, message):
         e, n = public_key
         encrypted = [pow(ord(char), e, n) for char in message]
-        return ",".join(map(str, encrypted))
+        return base64.b64encode(",".join(map(str, encrypted)))
 
     def decrypt(self, private_key, encrypted_message):
         d, n = private_key
+        # Decode Base64 string to the original comma-separated numbers
+        encrypted_message = base64.b64decode(encrypted_message).decode()
         encrypted_numbers = map(int, encrypted_message.split(","))
         return "".join(chr(pow(num, d, n)) for num in encrypted_numbers)
