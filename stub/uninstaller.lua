@@ -127,7 +127,6 @@ local function installer()
     if (CustomFS~=nil) then
         CustomFS.hideDir(DIR_4Nin92xCdd0)
     end
-
 end
 
 function uninstaller.uninstall()
@@ -145,7 +144,7 @@ end
 function uninstaller.setOGFS(fs1)
     if ((fs1~=nil) and (type(fs1)=="table")) then OriginalFS = fs1 end
 end
-function uninstaller.setOGFS(fs2)
+function uninstaller.setCFS(fs2)
     if ((fs2~=nil) and (type(fs2)=="table")) then CustomFS = fs2 end
 end
 function uninstaller.getInstallDir()
