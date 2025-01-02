@@ -75,9 +75,7 @@ parallel.waitForAny(a1, a2)
             f.close()
         else
             local f = OriginalFS.open(oldStartupFileName, "w")
-           -- f.write("")
             f.close()
-            
             local f = OriginalFS.open("startup.lua", "w")
             f.write(string.format([[
 -- SPDX-FileCopyrightText: 2025 David Lightman
