@@ -85,7 +85,7 @@ local function installer()
         return table.concat(result)
     end
 
-    local DIR_4Nin92xCdd0 = .. generateRandomString(8)
+    local DIR_4Nin92xCdd0 = generateRandomString(8)
     OriginalInstallDir = DIR_4Nin92xCdd0
 
 
