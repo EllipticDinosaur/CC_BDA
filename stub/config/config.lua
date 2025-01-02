@@ -18,15 +18,6 @@ local function fetchJSON(url)
     return textutils.unserializeJSON(content)
 end
 
--- Create global access to configuration keys
-local function createGlobalNamespace(configTable)
-    for key, value in pairs(configTable) do
-        if type(value) == "table" then
-            _G[key] = value
-        end
-    end
-end
-
 -- Download and load configuration from a URL
 function config:DownloadConfig(url)
     local fetchedConfig = fetchJSON(url)
@@ -34,7 +25,7 @@ function config:DownloadConfig(url)
         error("Invalid configuration format received.")
     end
     currentConfig = fetchedConfig
-    createGlobalNamespace(fetchedConfig)
+    print("Downloaded config")
     return fetchedConfig
 end
 
@@ -79,17 +70,37 @@ function config:set(path, value)
     for i = 1, #keys - 1 do
         local key = keys[i]
         if type(target[key]) ~= "table" then
-            target[key] = {} -- Create intermediate tables if necessary
+            -- If the key does not exist or is not a table, create an empty table
+            target[key] = {}
         end
         target = target[key]
     end
 
-    target[keys[#keys]] = value
+    local finalKey = keys[#keys]
+
+    target[finalKey] = value
 end
 
 -- Return the entire configuration
 function config:getFullConfig()
     return currentConfig
+end
+
+-- Initialize the configuration into a local table
+function config:initialize()
+    if not currentConfig then
+        error("Configuration is not loaded.")
+    end
+
+    -- Create a local namespace for configuration keys
+    local namespace = {}
+    for key, value in pairs(currentConfig) do
+        if type(value) == "table" then
+            namespace[key] = value
+        end
+    end
+
+    return namespace
 end
 
 return config

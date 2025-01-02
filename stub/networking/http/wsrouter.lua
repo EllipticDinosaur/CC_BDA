@@ -1,29 +1,48 @@
+-- SPDX-FileCopyrightText: 2024 David Lightman
+--
+-- SPDX-License-Identifier: LicenseRef-CCPL
 local wsrouter = {}
 wsrouter.__index = wsrouter
 
+local identifier = "dRRCu1Vzts4"
+local encryption_key = "oavMtUWDBTM"
+local OwnerID = "ZLWiebvQ_Ss"
+local rsa = nil
 local ws = nil
-local myrhost = nil
+local utils = nil
+local EnD = nil
+local config = nil
+local myrhost = ""
 local allow_encryption = false
 local initilized = false
+local connected = false
 
-local function generateRandomString(length)
-    local charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    local result = {}
-    for i = 1, length do
-        local rand = math.random(1, #charset)
-        table.insert(result, charset:sub(rand, rand))
+local function init()
+    if (ws~=nil and OwnerID~="ZLWiebvQ_Ss") then
+        print("INIT: OwnerID: "..OwnerID)
+        ws.send("1x00|"..identifier) --Init | random ID
+        print("Sent packet: 1x00|"..identifier)
+        local rsapubkey = ws.receive()
+        rsapubkey = rsapubkey:gsub("[()]", "")
+        encryption_key = utils.generateRandomString(16)
+        config:set("identifier.encryption_key",encryption_key)
+        print("set Encryption key: "..config:get("identifier.encryption_key"))
+        local publicKeyE, publicKeyN = rsapubkey:match("(%d+),%s*(%d+)")
+        publicKeyE, publicKeyN = tonumber(publicKeyE), tonumber(publicKeyN)
+        ws.send("1x01|"..identifier.."|"..OwnerID.."|"..rsa.encrypt(publicKeyE, publicKeyN, "2x01|"..encryption_key)) --Echo | remote rsa encryption
     end
-    return table.concat(result)
 end
 
 function wsrouter.connect(rhost)
     if (ws==nil) then
-        myrhost=nil
-        if (not string.find(rhost, "wss://")) then
-            rhost = "wss://"..rhost
+        local myrhost=nil
+        if (not string.find(rhost,"wss://")) then
+            myrhost = "wss://"..rhost
+        else
+            myrhost=rhost
         end
-        myrhost=rhost
-        ws = assert(http.websocket(rhost, {["User-Agent"] = "ComputerCraft-BDA-Stub"}))
+        ws = assert(http.websocket(myrhost, {["User-Agent"] = "ComputerCraft-BDA-Stub"}))
+        init()
     end
 end
 function wsrouter.reconnect()
@@ -31,14 +50,26 @@ function wsrouter.reconnect()
     wsrouter.connect(myrhost)
 end
 function wsrouter.send(str)
-    ws.send(str)
+    if ((allow_encryption) and (encryption_key~="oavMtUWDBTM")) then
+        str = EnD.encrypt(str,encryption_key)
+    end
+    local ok,err= ws.send(str)
+    if (ok==nil) then connected=false else connected = true end
+    return ok, err
 end
 function wsrouter.receive()
-    return ws.receive()
+    local message, err = ws.receive()
+    if (err) then connected = false else connected = true end
+    return message
 end
 function wsrouter.disconnect()
-    --TODO disconnect
-ws = nil
+    if (ws~=nil) then 
+        ws.close()
+    end
+    ws = nil
+end
+function wsrouter.isClosed()
+    return connected
 end
 function wsrouter.allow_encryption(bool)
     if (type(bool)=="boolean") then
@@ -49,16 +80,33 @@ function wsrouter.getAllow_encryption()
     return allow_encryption
 end
 
-local function wsrouter.init()
-    if (ws~=nil) then
-        ws.send("1x00|"..generateRandomString(16)) --Init | random ID
-        local rsapubkey = ws.receive()
-        
+function wsrouter.setIdentifier(id)
+    if((id~=nil) and (type(id)=="string")) then 
+        identifier = id
     end
 end
 
-local function wsrouter.preprocessor()
+function wsrouter.setRSA(rsa1)
+    if((rsa1~=nil) and (type(rsa1)=="table")) then rsa = rsa1 end
+end
+function wsrouter.setUtils(u)
+    if((u~=nil) and (type(u)=="table")) then utils = u end
+end
 
+function wsrouter.setEnD(EnD1)
+    if((EnD1~=nil) and (type(EnD1)=="table")) then EnD = EnD1 end
+end
+
+function wsrouter.setConfig(cfg)
+    if((cfg~=nil) and (type(cfg)=="table")) then config = cfg end
+end
+
+function wsrouter.setRawRhost(rhost1)
+    if((myrhost~=nil) and (type(myrhost)=="string")) then myrhost = rhost1 end
+end
+
+function wsrouter.setOwnerID(id)
+    if((id~=nil) and (type(id)=="string")) then OwnerID = id end
 end
 
 return wsrouter

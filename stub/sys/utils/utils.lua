@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2024 David Lightman
+--
+-- SPDX-License-Identifier: LicenseRef-CCPL
 local utils = {}
 utils.__index = utils
 

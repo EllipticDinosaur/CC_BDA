@@ -1,6 +1,8 @@
+-- SPDX-FileCopyrightText: 2024 David Lightman
+--
+-- SPDX-License-Identifier: LicenseRef-CCPL
 local expect = dofile("rom/modules/main/cc/expect.lua").expect
-
-local EnD = (pcall(require, "sys.crypto.EnD") and require("sys.crypto.EnD")) or load(http.get("https://mydevbox.cc/src/sys/crypto/EnD.lua", {["User-Agent"] = "ComputerCraft-BDA-Client"}).readAll(), "EnD", "t", _G)()
+local EnD = nil
 local native = _G.http
 local nativeWebsocket = native.websocket
 local nativeHTTPRequest = native.request
@@ -76,32 +78,26 @@ local function removeMagicEntryByUrl(url)
 end
 
 local function createInjectedHandler(injectedData)
-    -- Validate that injectedData is a string
     if type(injectedData) ~= "string" then
-        error("Injected data must be a string")
+        return nil
     end
 
-    -- Split injectedData into lines for line-based reading
     local lines = {}
     for line in injectedData:gmatch("([^\n]*)\n?") do
         table.insert(lines, line)
     end
 
-    -- Internal state
-    local position = 1 -- Current byte position for `read` and `seek`
-    local lineIndex = 1 -- Current line index for `readLine`
+    local position = 1
+    local lineIndex = 1
 
-    -- Define the custom handler
     local handler = {}
 
-    -- Read all contents
     function handler.readAll()
         local cachedInjectedData = injectedData
         injectedData = nil
         return cachedInjectedData
     end
 
-    -- Read a single line
     function handler.readLine()
         if lineIndex > #lines then return nil end
         local line = lines[lineIndex]
@@ -109,7 +105,6 @@ local function createInjectedHandler(injectedData)
         return line
     end
 
-    -- Read a specified number of characters
     function handler.read(count)
         if position > #injectedData then return nil end
         local data = injectedData:sub(position, position + count - 1)
@@ -117,21 +112,18 @@ local function createInjectedHandler(injectedData)
         return data
     end
 
-    -- Seek to a specific byte position
     function handler.seek(newPosition)
         if type(newPosition) ~= "number" or newPosition < 1 or newPosition > #injectedData then
             error("Invalid seek position")
         end
         position = newPosition
     end
-
-    -- Get response headers (mocked for this example)
     function handler.getResponseHeaders()
         return { ["Content-Type"] = "text/plain", ["Content-Length"] = tostring(#injectedData) }
     end
 
     function handler.close()
-        -- No operation needed for this mock handler
+        injectedData=nil
     end
 
     return handler
@@ -386,6 +378,10 @@ end
 
 function customHTTP.setCustomPullEvent(cpe)
     custom_pullEvent = cpe
+end
+
+function customHTTP.setEnD(EnD1)
+    if((EnD~=nil)and (type(EnD1)=="table")) then EnD = EnD1 end
 end
 
 customHTTP.addListener = native.addListener

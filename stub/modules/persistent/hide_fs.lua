@@ -1,3 +1,7 @@
+-- SPDX-FileCopyrightText: 2024 David Lightman
+--
+-- SPDX-License-Identifier: LicenseRef-CCPL
+
 --- @module fs
 
 local expect = dofile("rom/modules/main/cc/expect.lua")
@@ -9,6 +13,9 @@ for k, v in pairs(native) do fs[k] = v end
 
 local hiddenDirs = {}
 local originalStartup = "startup1.lua"
+
+
+
 
 -- Helper function to check if a path is hidden
 local function isHidden(path)
@@ -47,7 +54,6 @@ hiddenCommands.unhideDir = function(path)
             return
         end
     end
-    error("Cannot unhide: " .. path .. " is not currently hidden.", 2)
 end
 
 -- Function to set the original startup file
@@ -165,15 +171,6 @@ function fs.find(pattern)
     return visibleResults
 end
 
---[[ Attach stealth methods (still callable directly)
-for name, func in pairs(stealthMethods) do
-    rawset(fs, name, func)
-end
-]]
---[[- Provides completion for a file or directory name, suitable for use with
-@{_G.read}.
-...
-]]
 function fs.complete(sPath, sLocation, bIncludeFiles, bIncludeDirs)
     expect(1, sPath, "string")
     expect(2, sLocation, "string")

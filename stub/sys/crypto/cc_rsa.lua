@@ -1,4 +1,10 @@
+-- SPDX-FileCopyrightText: 2024 David Lightman
+--
+-- SPDX-License-Identifier: LicenseRef-CCPL
+
 -- Helper functions for modular exponentiation
+local rsa = {}
+rsa.__index = rsa
 local function modExp(base, exp, mod)
     local result = 1
     base = base % mod
@@ -70,11 +76,12 @@ function rsa.loadPrivateKey(keyString)
     return {d = tonumber(d), n = tonumber(n)}
 end
 
-function rsa.encrypt(publicKey, message)
+function rsa.encrypt(publicKeyE,publicKeyN, message)
     local encrypted = {}
     for i = 1, #message do
         local char = message:byte(i)
-        table.insert(encrypted, modExp(char, publicKey.e, publicKey.n))
+       -- print("public key: "..publicKey .. " N: ")
+        table.insert(encrypted, modExp(char, publicKeyE, publicKeyN))
     end
     return toBase64(table.concat(encrypted, ","))
 end
@@ -120,7 +127,9 @@ function fromBase64(data)
     end))
 end
 
--- Example usage
+
+return rsa
+--[[ Example usage
 local keys = rsa.generateKeys()
 local publicKeyString = keys.public.e .. "," .. keys.public.n
 local privateKeyString = keys.private.d .. "," .. keys.private.n
@@ -134,8 +143,9 @@ local privateKey = rsa.loadPrivateKey(privateKeyString)
 local message = "Hello, RSA!"
 print("Original Message: " .. message)
 
-local encrypted = rsa.encrypt(publicKey, message)
+local encrypted = rsa.encrypt(keys.public.e, keys.public.n, message)
 print("Encrypted (Base64): " .. encrypted)
 
 local decrypted = rsa.decrypt(privateKey, encrypted)
 print("Decrypted Message: " .. decrypted)
+]]
