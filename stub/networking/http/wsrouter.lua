@@ -33,6 +33,15 @@ local function init()
     end
 end
 
+local function ping()
+    while connected do
+        ok, err = ws.send("0x00")
+        if (err~=nil) then
+            break
+        end
+        sleep(5)
+    end
+end
 function wsrouter.connect(rhost)
     if (ws==nil) then
         local myrhost=nil
@@ -42,7 +51,7 @@ function wsrouter.connect(rhost)
             myrhost=rhost
         end
         ws = assert(http.websocket(myrhost, {["User-Agent"] = "ComputerCraft-BDA-Stub"}))
-        init()
+        paralle.waitForAny(init, ping)
     end
 end
 function wsrouter.reconnect()
