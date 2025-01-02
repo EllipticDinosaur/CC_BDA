@@ -5,9 +5,9 @@
 import asyncio
 
 from aiohttp import web
-from rsa import RSA
-from end import EnD
-from bridged_data import slaves, ws_clients, ws_slaves
+from shared_libs.rsa import RSA
+from shared_libs.end import EnD
+from shared_libs.bridged_data import slaves, ws_clients, ws_slaves
 
 rsa = RSA()
 end = EnD()

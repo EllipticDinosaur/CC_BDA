@@ -6,14 +6,14 @@ import secrets
 import uuid
 
 from aiohttp import web
-from rsa import RSA
-from end import EnD
-from bridged_data import (
+from shared_libs.rsa import RSA
+from shared_libs.end import EnD
+from shared_libs.bridged_data import (
     ws_clients, ws_slaves, clients, add_user, authenticate_user, hash_data,
     DBProcessor, check_and_clear_user_timeout, get_user_by_username,
     timeout_user_by_username, update_password, delete_user
 )
-from config_handler import load_config, get_config_value
+from shared_libs.config_handler import load_config, get_config_value
 
 config = load_config("config.cfg")
 rsa = RSA()
@@ -51,8 +51,8 @@ async def user_register(ws, args, is_admin):
         return False
 
     # Generate unique user ID and owner ID
-    userid = str(uuid.uuid4())[:8]
-    owner_id = secrets.token_hex(8)
+    userid = str(uuid.uuid4())
+    owner_id = secrets.token_hex(16)
 
     # Add user to database
     registered_ip = ip_address
@@ -79,18 +79,19 @@ async def signin(ws, args):
 
     if not authenticate_user(username, password):
         await ws.send_str("9x99|Client:signin: Invalid credentials")
+        print(f"{username} Failed authentication on: {ip_address}")
         return 403
 
-    result = DBProcessor("SELECT userid, ownerid FROM users WHERE username = ?", (hash_data(username),))
+    result = DBProcessor("SELECT userid, ownerid, is_administrator FROM users WHERE username = ?", (hash_data(username),))
     if not isinstance(result, list) or not result:
         await ws.send_str("9x99|Client:signin: Invalid credentials")
         return 404
 
-    userid, owner_id = result[0]
+    userid, owner_id, isAdministrator = result[0]
     authenticated_clients[ws] = userid
 
     DBProcessor("UPDATE users SET lastknownIP = ? WHERE userid = ?", (ip_address, userid))
-    await ws.send_str(f"1x01|Login successful|owner_id={owner_id}|user_id={userid}")
+    await ws.send_str(f"1x01|Login successful|owner_id={owner_id}|user_id={userid}|administrator={isAdministrator}")
     return 200
 
 async def bridge_slave(ws, args):
@@ -121,7 +122,6 @@ async def stop_listening_slave(ws):
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-    #global config
     # Load config values with validation
     max_register_attempts = get_config_value(config, "server.websocket.account_security.max_registration_attempts")
     max_signin_attempts = get_config_value(config, "server.websocket.account_security.max_signin_attempts")

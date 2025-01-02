@@ -2,7 +2,7 @@
 #
 #   SPDX-License-Identifier: LicenseRef-CCPL
 import uuid, secrets
-from bridged_data import DBProcessor,hash_data, get_user_by_username, add_user, delete_user_by_username
+from shared_libs.bridged_data import DBProcessor,hash_data, get_user_by_username, add_user, delete_user_by_username
 
 def user_whois(username):
     user = get_user_by_username(username)
@@ -24,7 +24,7 @@ def user_create(username, password, isadmin):
         return False
     isadmin = str(isadmin)
     print(f"username: {username} password: {password} isadmin {isadmin}")
-    print(add_user(str(uuid.uuid4())[:8], "127.0.0.1","127.0.0.1",username,password,secrets.token_hex(8),isadmin))
+    print(add_user(str(uuid.uuid4()), "127.0.0.1","127.0.0.1",username,password,secrets.token_hex(16),isadmin))
 
 def user_deletion(username):
     if not isinstance(username, str):

@@ -7,7 +7,7 @@ import sqlite3
 import bcrypt
 import time
 import sys
-from config_handler import load_config, get_config_value
+from shared_libs.config_handler import load_config, get_config_value
 
 config = load_config("config.cfg")
 

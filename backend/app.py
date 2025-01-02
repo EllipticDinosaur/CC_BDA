@@ -4,15 +4,22 @@
 
 import threading
 import sys
+import logging
 
 from aiohttp import web
-from index_route import setup_routes as setup_index_routes
-from src_route import setup_routes as setup_src_routes
-from ws_route_slave import setup_routes_slave as setup_ws_routes_slave
-from ws_route_client import setup_routes_client as setup_ws_routes_client
-from bridged_data import initialize_db
-from config_handler import load_config, get_config_value
-from input_monitor import monitor_user_input
+from backend_security.ip_logger import setup_routes as setup_iplogger_route
+from backend_security.http_error_handling import error_handling_middleware
+from routes.index_route import setup_routes as setup_index_routes
+from routes.src_route import setup_routes as setup_src_routes
+from routes.user_register_route import setup_routes as setup_register_routes
+from routes.websocket_routes.ws_route_slave import setup_routes_slave as setup_ws_routes_slave
+from routes.websocket_routes.ws_route_client import setup_routes_client as setup_ws_routes_client
+from shared_libs.bridged_data import initialize_db
+from shared_libs.config_handler import load_config, get_config_value
+from shell.input_monitor import monitor_user_input
+
+logging.basicConfig(level=logging.WARNING)
+logging.getLogger("aiohttp.access").setLevel(logging.CRITICAL)
 
 CONFIG = ""
 # Load config
@@ -28,9 +35,12 @@ except Exception as e:
 
 async def create_app():
     initialize_db(CONFIG)
-    app = web.Application()
+    app = web.Application(middlewares=[error_handling_middleware])
+    setup_iplogger_route(app)
     setup_index_routes(app)
     setup_src_routes(app)
+    if (get_config_value(CONFIG, "server.http.forms.registration")):
+        setup_register_routes(app)
     setup_ws_routes_slave(app)
     setup_ws_routes_client(app)
     return app

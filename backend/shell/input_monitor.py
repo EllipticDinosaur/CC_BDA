@@ -5,8 +5,8 @@
 import os
 import sys
 
-from shell_help_commands import print_commands, help_user_create,help_users,help_user_deletion
-from shell_command_handler import user_whois, user_create, user_deletion
+from shell.shell_help_commands import print_commands, help_user_create,help_users,help_user_deletion
+from shell.shell_command_handler import user_whois, user_create, user_deletion
 
 def display_help(args):
     try:
