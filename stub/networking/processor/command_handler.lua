@@ -13,7 +13,7 @@ local function ping()
 end
 
 local function pong()
-    print("Pong!")
+    print("0x01")
 end
 
 local function echo(str)

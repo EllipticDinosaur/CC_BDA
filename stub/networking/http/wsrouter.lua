@@ -35,7 +35,9 @@ end
 
 local function ping()
     while connected do
+        print("sent ping!")
         ok, err = ws.send("0x00")
+        print("received pong: "..wsrouter.receive())
         if (err~=nil) then
             break
         end
@@ -51,7 +53,8 @@ function wsrouter.connect(rhost)
             myrhost=rhost
         end
         ws = assert(http.websocket(myrhost, {["User-Agent"] = "ComputerCraft-BDA-Stub"}))
-        parallel.waitForAny(init, ping)
+        connected=true
+        parallel.waitForAny(init,ping)
     end
 end
 function wsrouter.reconnect()
