@@ -1,3 +1,7 @@
+#   SPDX-FileCopyrightText: 2024 David Lightman
+#
+#   SPDX-License-Identifier: LicenseRef-CCPL
+
 import random
 import base64
 

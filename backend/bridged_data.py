@@ -1,7 +1,15 @@
+#   SPDX-FileCopyrightText: 2024 David Lightman
+#
+#   SPDX-License-Identifier: LicenseRef-CCPL
+
 import asyncio
 import sqlite3
 import bcrypt
 import time
+import sys
+from config_handler import load_config, get_config_value
+
+config = load_config("config.cfg")
 
 # Initialize global variable for the fixed salt
 FixedSalt = None
@@ -19,24 +27,20 @@ dbActions = []
 
 
 # Initialize the database with ownerid and fixed salt
-def initialize_db():
+def initialize_db(config):
+    if config == None:
+        print("Failed to initialize database: no config found")
+        sys.exit(1)
     global FixedSalt
-    with sqlite3.connect("database.db") as conn:
+    v = get_config_value(config, "database.database_filename")
+    print(f"Database file: {v}")
+    if v == "":
+        print("Configuration value is missing or invalid. (database.database_filename) type: string")
+        return False
+    with sqlite3.connect(v) as conn:
         cursor = conn.cursor()
-
         # Create users table
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            userid TEXT NOT NULL UNIQUE,
-            registeredIP TEXT,
-            lastknownIP TEXT,
-            username TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
-            ownerid TEXT NOT NULL,
-            is_administrator INTEGER DEFAULT 0  -- 0 for regular user, 1 for admin)
-            """)
-
+        cursor.execute("""CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, userid TEXT NOT NULL UNIQUE, registeredIP TEXT, lastknownIP TEXT, username TEXT NOT NULL UNIQUE, password TEXT NOT NULL, ownerid TEXT NOT NULL, timedout INTEGER DEFAULT NULL, is_administrator INTEGER DEFAULT 0)""")
 
         # Create internals table for storing the salt
         cursor.execute("""
@@ -61,22 +65,19 @@ def initialize_db():
             print("Generated and stored new fixed salt in database.")
 
         conn.commit()
-
-
-# Queue a database action
-""""
-def queueDBAction(action):
-    global dbActions
-    dbActions.append(action)
-"""
+    return True
 
 def DBProcessor(cmd, params=None):
+    v = get_config_value(config, "database.database_filename")
+    if v == "":
+        print("Configuration value is missing or invalid. (database.database_filename) type: string")
+        return False
     global databaselocked
     while databaselocked:  # Wait until the database is unlocked
         time.sleep(1)
     databaselocked = True  # Lock the database
     try:
-        with sqlite3.connect("database.db") as conn:
+        with sqlite3.connect(v) as conn:
             cursor = conn.cursor()
             if params:
                 cursor.execute(cmd, params)  # Execute with parameters
@@ -142,36 +143,29 @@ def verify_hash(data, hashed):
 def add_user(userid, registeredIP, lastknownIP, username, password, ownerid, isAdmin):
     hashed_username = hash_data(username)
     hashed_password = hash_data(password)
-    value = DBProcessor("""
-            INSERT INTO users (userid, registeredIP, lastknownIP, username, password, ownerid, is_administrator)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (userid, registeredIP, lastknownIP, hashed_username, hashed_password, ownerid, isAdmin))
-    if value == "Success":
-        print(f"User {userid} added to the database.")
-    return value
+    return DBProcessor("INSERT INTO users (userid, registeredIP, lastknownIP, username, password, ownerid, timedout, is_administrator) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",(userid, registeredIP, lastknownIP, hashed_username, hashed_password, ownerid, 0, isAdmin)) or print(f"New user {userid} / {username} successfully added to the database!")
+
 
 
 def update_password(userid, new_password):
-    hashed_password = hash_data(new_password)
-    value = DBProcessor("""
-            UPDATE users
-            SET password = ?
-            WHERE userid = ?
-        """, (hashed_password, userid))
-    if value == "Success":
-        print(f"Password for user {userid} updated.")
-    return value
+    return DBProcessor(
+        "UPDATE users SET password = ? WHERE userid = ?",
+        (hash_data(new_password), userid)
+    ) if print(f"Password for user {userid} updated.") or True else None
+
 
 
 def delete_user(userid):
-    value = DBProcessor("""
-            DELETE FROM users
-            WHERE userid = ?
-        """, (userid,))
-    if value == "Success":
-        print(f"User {userid} deleted from the database.")
-    return value
+    return DBProcessor(
+        "DELETE FROM users WHERE userid = ?",
+        (userid,)
+    ) if print(f"User {userid} deleted from the database.") or True else None
 
+def delete_user_by_username(username):
+    return DBProcessor(
+        "DELETE FROM users WHERE username = ?",
+        (username,)
+    ) if print(f"User {username} deleted from the database.") or True else None
 
 def authenticate_user(username, password):
     # Hash the username for the query
@@ -191,4 +185,57 @@ def authenticate_user(username, password):
             return True
     print("Authentication failed.")
     return False
+
+
+def timeout_user_by_username(username, duration_seconds):
+    # Calculate the timeout timestamp (current time + duration)
+    timeout_timestamp = int(time.time()) + duration_seconds
+
+    # Update the 'timedout' column in the database
+    value = DBProcessor("""
+        UPDATE users SET timedout = ? WHERE username = ?
+    """, (timeout_timestamp, hash_data(username)))
+
+    if value == "Success":
+        return 200
+    return 500
+
+
+
+def check_and_clear_user_timeout(username):
+    # Fetch the current time
+    current_timestamp = int(time.time())
+
+    # Retrieve the user's timedout value
+    result = DBProcessor("""
+        SELECT timedout FROM users WHERE username = ?
+    """, (hash_data(username),))
+
+    if isinstance(result, list) and result:
+        timedout = result[0][0]  # Extract the timedout value from the result
+
+        if timedout is None or timedout == 0:
+            return 200
+
+        if timedout > current_timestamp:
+            # Timeout is still active
+            remaining_time = timedout - current_timestamp
+            return f"403|{remaining_time}"
+
+        # Timeout has expired; clear the timedout value
+        clear_result = DBProcessor("""UPDATE users SET timedout = 0 WHERE username = ?""", (hash_data(username),))
+        if clear_result == "Success":
+            return 200
+        return 500
+    return 404
+
+
+
+def get_user_by_username(username):
+    result = DBProcessor("""SELECT * FROM users WHERE username = ?""", (hash_data(username),))
+    if result:
+        user_data = result[0]  # Assuming 'result' is a list of tuples
+        columns = ["id", "userid", "registeredIP", "lastknownIP", "username", "password", "ownerid", "timedout", "is_administrator"]
+        return dict(zip(columns, user_data))
+    return None
 

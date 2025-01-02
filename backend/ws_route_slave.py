@@ -1,3 +1,7 @@
+#   SPDX-FileCopyrightText: 2024 David Lightman
+#
+#   SPDX-License-Identifier: LicenseRef-CCPL
+
 import asyncio
 
 from aiohttp import web
@@ -30,7 +34,6 @@ async def process_encrypted_commands(ws, identifier, cmd, owner_id):
             print(f"Added connection info: {connection_info}")
         await ws.send_str(end.encrypt("0x01|OK", args[1]))
     elif args[0] == "5x55":  # Bridge to a client WebSocket
-        # Retrieve the owner ID from the slaves array
         owner_id = None
         for slave in slaves:
             if slave["identifier"] == identifier:
