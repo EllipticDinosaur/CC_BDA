@@ -4,6 +4,8 @@
 
 import secrets
 import uuid
+import requests
+
 from aiohttp import web
 from shared_libs.bridged_data import add_user
 from shared_libs.config_handler import get_config_value
@@ -26,7 +28,7 @@ async def register_handler(request):
                 return web.json_response({"success": False, "message": "reCAPTCHA is misconfigured"}, status=500)
 
             # Validate reCAPTCHA
-            import requests
+            
             recapcha_response = requests.post(
                 "https://www.google.com/recaptcha/api/siteverify",
                 data={"secret": recapcha_key, "response": token}
