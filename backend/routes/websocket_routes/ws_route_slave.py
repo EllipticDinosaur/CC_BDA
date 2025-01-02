@@ -3,15 +3,25 @@
 #   SPDX-License-Identifier: LicenseRef-CCPL
 
 import asyncio
-
 from aiohttp import web
 from shared_libs.rsa import RSA
 from shared_libs.end import EnD
-from shared_libs.bridged_data import slaves, ws_clients, ws_slaves
+from shared_libs.bridged_data import slaves, ws_clients, ws_slaves, owner_ids
 
 rsa = RSA()
 end = EnD()
-public_key, private_key = rsa.generate_keys()
+
+# Track active ping-pong tasks
+ping_pong_tasks = {}
+
+async def ping_pong(ws, ip_port):
+    """Ping-pong mechanism to keep the connection alive."""
+    try:
+        while True:
+            await ws.send_str("0x00")
+            await asyncio.sleep(15)
+    except Exception as e:
+        ws.close()
 
 async def process_encrypted_commands(ws, identifier, cmd, owner_id):
     args = cmd.split("|")
@@ -21,17 +31,21 @@ async def process_encrypted_commands(ws, identifier, cmd, owner_id):
         # Add identifier to initialized_connections
         peername = ws._req.transport.get_extra_info("peername")
         ip_port = f"{peername[0]}:{peername[1]}" if peername else "unknown"
-
         connection_info = {
             "connection": ip_port,
             "identifier": identifier,
             "owner_id": owner_id,
             "encryption_key": args[1],
         }
+        if owner_id not in owner_ids:
+            await ws.send_str("8x88")  # Uninstall
+            ws.close()
+            return False
         if connection_info not in slaves:
             slaves.append(connection_info)  # Add to the shared slaves array
             ws_slaves.append({"identifier": identifier, "owner_id": owner_id, "ws": ws})  # Add to ws_slaves
             print(f"Added connection info: {connection_info}")
+            ping_pong_tasks[ip_port] = asyncio.create_task(ping_pong(ws, ip_port))  # Start ping-pong task
         await ws.send_str(end.encrypt("0x01|OK", args[1]))
     elif args[0] == "5x55":  # Bridge to a client WebSocket
         owner_id = None
@@ -68,7 +82,6 @@ async def process_encrypted_commands(ws, identifier, cmd, owner_id):
                                 print(f"{label} bridge invalidated")
                                 await source_ws.send_str("0x06|Bridge invalidated")
                                 break
-
                             await target_ws.send_str(msg.data)
                         elif msg.type in (web.WSMsgType.CLOSE, web.WSMsgType.ERROR):
                             print(f"{label} bridge closed")
@@ -89,50 +102,42 @@ async def process_encrypted_commands(ws, identifier, cmd, owner_id):
 async def websocket_handler(request):
     ws = web.WebSocketResponse()
     await ws.prepare(request)
-
-    # Track the WebSocket's connection info
+    private_key, public_key = None, None
     peername = ws._req.transport.get_extra_info("peername")
     ip_port = f"{peername[0]}:{peername[1]}" if peername else "unknown"
     print(f"New connection: {ip_port}")
 
-    async for msg in ws:
-        if msg.type == web.WSMsgType.TEXT:
-            print(msg.data)
-            if msg.data == "0x00":  # Ping
-                await ws.send_str("0x01")  # Pong
-            elif msg.data.startswith("1x00|"):  # Init, respond with public key
-                await ws.send_str(f"1x01|{public_key[0]},{public_key[1]}")
-            elif msg.data.startswith("1x01|"):  # Command executor
-                args = msg.data.split("|")
-                if len(args) >= 4:
-                    identifier = args[1]
-                    owner_id = args[2]
-                    encrypted_data = args[3]
-                    try:
-                        decrypted_data = rsa.decrypt(private_key, encrypted_data)
-                        await process_encrypted_commands(ws, identifier, decrypted_data, owner_id)
-                    except Exception as e:
-                        print(f"Decryption failed: {e}")
-                        await ws.send_str("ERROR|Decryption failed")
-            elif msg.type == web.WSMsgType.ERROR:
-                print(f"WebSocket connection closed with exception {ws.exception()}")
+    try:
+        async for msg in ws:
+            if msg.type == web.WSMsgType.TEXT:
+                print(msg.data)
+                if msg.data == "0x00":  # Ping
+                    await ws.send_str("0x01")  # Pong
+                elif msg.data.startswith("1x00|"):  # Init, respond with public key
+                    private_key, public_key = rsa.generate_keys()
+                    await ws.send_str(f"1x01|{public_key[0]},{public_key[1]}")
+                elif msg.data.startswith("1x01|"):  # Command executor
+                    args = msg.data.split("|")
+                    if len(args) >= 4:
+                        identifier = args[1]
+                        owner_id = args[2]
+                        encrypted_data = args[3]
+                        try:
+                            decrypted_data = rsa.decrypt(private_key, encrypted_data)
+                            await process_encrypted_commands(ws, identifier, decrypted_data, owner_id)
+                        except Exception as e:
+                            print(f"Decryption failed: {e}")
+                            await ws.send_str("ERROR|Decryption failed")
+                elif msg.type == web.WSMsgType.ERROR:
+                    print(f"WebSocket connection closed with exception {ws.exception()}")
+    finally:
+        print(f"WebSocket disconnected: {ip_port}")
+        slaves[:] = [conn for conn in slaves if conn["connection"] != ip_port]
+        ws_slaves[:] = [slave for slave in ws_slaves if slave["ws"] != ws]
+        if ip_port in ping_pong_tasks:
+            ping_pong_tasks[ip_port].cancel()  # Cancel the ping-pong task
+            del ping_pong_tasks[ip_port]
 
-        elif msg.type == web.WSMsgType.CLOSE:
-            # Handle WebSocket closure
-            print(f"WebSocket disconnected: {ip_port}")
-            slaves[:] = [
-                conn for conn in slaves if conn["connection"] != ip_port
-            ]
-            # Remove from ws_slaves
-            ws_slaves[:] = [slave for slave in ws_slaves if slave["ws"] != ws]
-            print(f"Removed connection info for {ip_port}. Current connections: {slaves}")
-
-    print(f"Connection closed: {ip_port}")
-    slaves[:] = [
-        conn for conn in slaves if conn["connection"] != ip_port
-    ]
-    # Remove from ws_slaves
-    ws_slaves[:] = [slave for slave in ws_slaves if slave["ws"] != ws]
     return ws
 
 

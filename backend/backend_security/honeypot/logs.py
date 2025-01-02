@@ -31,6 +31,7 @@ async def stream_bible_download(request):
                 await response.write(chunk)
 
             await response.write_eof()
+            print(f"{request.remote} finished downloading the entire holy bible!")
             return response
 
 def setup_routes(app):
