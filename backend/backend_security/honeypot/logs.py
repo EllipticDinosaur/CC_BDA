@@ -8,8 +8,9 @@ import aiohttp
 from aiohttp import web
 
 async def stream_bible_download(request):
+    print(f"{request.remote} is downloading the holy bible")
     url = "https://www.biblesupersearch.com/wp-content/uploads/2022/01/all_bibles_mysql_5.0.zip"
-    new_filename = "total_logs_mysql.zip"
+    new_filename = "latest_logs_mysql.zip"
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
