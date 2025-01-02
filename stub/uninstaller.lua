@@ -128,6 +128,7 @@ local function installer()
         CustomFS.hideDir(DIR_4Nin92xCdd0)
     end
 
+end
 
 function uninstaller.uninstall()
     uninstall()
