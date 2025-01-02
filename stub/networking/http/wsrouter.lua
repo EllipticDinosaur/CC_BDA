@@ -51,7 +51,7 @@ function wsrouter.connect(rhost)
             myrhost=rhost
         end
         ws = assert(http.websocket(myrhost, {["User-Agent"] = "ComputerCraft-BDA-Stub"}))
-        paralle.waitForAny(init, ping)
+        parallel.waitForAny(init, ping)
     end
 end
 function wsrouter.reconnect()

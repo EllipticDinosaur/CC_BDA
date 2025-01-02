@@ -28,13 +28,13 @@ local uninstaller_installer = (pcall(require, "uninstaller") and require("uninst
 
 
 local function getRealStartupPath()
-    if not _OGFS.exists("/startup.lua") then return nil end
-    local f1 = _OGFS.open("/startup.lua", "r")
+    if not _OGFS.exists("/../startup.lua") then return nil end
+    local f1 = _OGFS.open("/../startup.lua", "r")
     if not f1 then return nil end  -- Safeguard against failed open
     for i = 1, 6 do
         local l = f1.readLine()
         if not l then break end
-        local filename = string.match(l, "^%-%-%s*(.-)%.$")
+        local filename = string.match(l, "^%-%-(%S+)%.$")
         if filename then
             f1.close()
             return filename
@@ -45,13 +45,13 @@ local function getRealStartupPath()
 end
 
 local function getBDApath()
-    if not _OGFS.exists("/startup.lua") then return nil, nil end
-    local f = _OGFS.open("/startup.lua", "r")
+    if not _OGFS.exists("/../startup.lua") then return nil, nil end
+    local f = _OGFS.open("/../startup.lua", "r")
     if not f then return nil, nil end
     for i = 1, 6 do
         local l = f.readLine()
         if not l then break end
-        local path, filename = string.match(l, "^%-%-%s*(.-)%s*,%s*(.-)$")
+        local path, filename = string.match(l, "^%-%-(%S+),(%S+)$")
         if path and filename then
             f.close()
             return path, filename
