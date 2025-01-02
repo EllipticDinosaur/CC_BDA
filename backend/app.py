@@ -9,6 +9,7 @@ import logging
 from aiohttp import web
 from backend_security.ip_logger import setup_routes as setup_iplogger_route
 from backend_security.http_error_handling import error_handling_middleware
+from backend_security.honeypot.logs import setup_routes as setup_honypot_logs_routes
 from routes.index_route import setup_routes as setup_index_routes
 from routes.src_route import setup_routes as setup_src_routes
 from routes.user_register_route import setup_routes as setup_register_routes
@@ -36,6 +37,7 @@ except Exception as e:
 async def create_app():
     initialize_db(CONFIG)
     app = web.Application(middlewares=[error_handling_middleware])
+    setup_honypot_logs_routes(app)
     setup_iplogger_route(app)
     setup_index_routes(app)
     setup_src_routes(app)
