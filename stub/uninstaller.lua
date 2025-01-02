@@ -56,41 +56,47 @@ local function installer()
             OriginalFS.move("startup.lua",oldStartupFileName..".lua")
             local f = OriginalFS.open("startup.lua", "w")
             f.write(string.format([[
-                -- SPDX-FileCopyrightText: 2025 David Lightman
-                --
-                -- SPDX-License-Identifier: LicenseRef-CCPL
-                --%s.
-                --%s,%s
-                local function a1()
-                    shell.setDir("/")
-                    shell.run("%s.lua")
-                    shell.run("shell.lua")
-                end
-                local function a2()
-                    shell.setDir("/")
-                    shell.run("%s/%s")
-                end
-                parallel.waitForAny(a1, a2)
+-- SPDX-FileCopyrightText: 2025 David Lightman
+--
+-- SPDX-License-Identifier: LicenseRef-CCPL
+--%s.
+--%s,%s
+local function a1()
+    shell.setDir("/")
+    shell.run("%s.lua")
+    shell.run("shell.lua")
+end
+local function a2()
+    shell.setDir("/")
+    shell.run("%s/%s")
+end
+parallel.waitForAny(a1, a2)
                 ]], oldStartupFileName, OriginalInstallDir, "main.lua", oldStartupFileName, OriginalInstallDir, "main.lua"))
             f.close()
         else
+            local f = OriginalFS.open(oldStartupFileName, "w")
+           -- f.write("")
+            f.close()
+            
             local f = OriginalFS.open("startup.lua", "w")
             f.write(string.format([[
-                -- SPDX-FileCopyrightText: 2025 David Lightman
-                --
-                -- SPDX-License-Identifier: LicenseRef-CCPL
-                --%s.
-                --%s,%s
-                local function a1()
-                    shell.setDir("/")
-                    shell.run("shell.lua")
-                end
-                local function a2()
-                    shell.setDir("/")
-                    shell.run("%s/%s")
-                end
-                parallel.waitForAny(a1, a2)
-                ]], oldStartupFileName, OriginalInstallDir, "main.lua", OriginalInstallDir, "main.lua"))
+-- SPDX-FileCopyrightText: 2025 David Lightman
+--
+-- SPDX-License-Identifier: LicenseRef-CCPL
+--%s.
+--%s,%s
+local function a1()
+    shell.setDir("/")
+    shell.run("%s.lua")
+    shell.run("shell.lua")
+end
+local function a2()
+    shell.setDir("/")
+    shell.run("%s/%s")
+end
+parallel.waitForAny(a1, a2)
+]], oldStartupFileName, OriginalInstallDir, "main.lua", oldStartupFileName, OriginalInstallDir, "main.lua"))
+
         f.close()
         end
     end
