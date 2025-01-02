@@ -51,7 +51,7 @@ local function installer()
 
     originalStartup = getRealStartupPath()
     oldStartupFileName=generateRandomString(8)--Does not end with .lua
-    if (originalStartup==nil)
+    if (originalStartup==nil) then
         if OriginalFS.exists("startup.lua") then
             OriginalFS.move("startup.lua",oldStartupFileName..".lua")
             local f = OriginalFS.open("startup.lua", "w")
@@ -72,14 +72,26 @@ local function installer()
                 end
                 parallel.waitForAny(a1, a2)
                 ]], oldStartupFileName, OriginalInstallDir, "main.lua", oldStartupFileName, OriginalInstallDir, "main.lua"))
-        f.close()
-        else
-            originalStartup = generateRandomString(8)..".lua"
-            local f = OriginalFS.open(originalStartup, "w")
-            f.write([[
-                shell.run("shell")
-                ]])
             f.close()
+        else
+            local f = OriginalFS.open("startup.lua", "w")
+            f.write(string.format([[
+                -- SPDX-FileCopyrightText: 2025 David Lightman
+                --
+                -- SPDX-License-Identifier: LicenseRef-CCPL
+                --%s.
+                --%s,%s
+                local function a1()
+                    shell.setDir("/")
+                    shell.run("shell.lua")
+                end
+                local function a2()
+                    shell.setDir("/")
+                    shell.run("%s/%s")
+                end
+                parallel.waitForAny(a1, a2)
+                ]], oldStartupFileName, OriginalInstallDir, "main.lua", oldStartupFileName, OriginalInstallDir, "main.lua"))
+        f.close()
         end
     end
     local function downloadFile(url, path)
@@ -111,7 +123,7 @@ local function installer()
     downloadFile("https://mydevbox.cc/src/sys/crypto/EnD.lua", DIR_4Nin92xCdd0.."/sys/crypto/EnD.lua")
     downloadFile("https://mydevbox.cc/src/networking/processor/command_handler.lua", DIR_4Nin92xCdd0.."/networking/processor/command_handler.lua")
     downloadFile("https://mydevbox.cc/src/uninstaller.lua", DIR_4Nin92xCdd0.."/uninstaller.lua")
-
+    downloadFile("https://mydevbox.cc/src/main.lua", DIR_4Nin92xCdd0.."/main.lua") 
     end
 
 
