@@ -7,6 +7,8 @@ import sqlite3
 import bcrypt
 import time
 import sys
+import secrets
+
 from shared_libs.config_handler import load_config, get_config_value
 
 config = load_config("config.cfg")
@@ -40,7 +42,7 @@ def initialize_db(config):
     with sqlite3.connect(v) as conn:
         cursor = conn.cursor()
         # Create users table
-        cursor.execute("""CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, userid TEXT NOT NULL UNIQUE, registeredIP TEXT, lastknownIP TEXT, username TEXT NOT NULL UNIQUE, password TEXT NOT NULL, ownerid TEXT NOT NULL, timedout INTEGER DEFAULT NULL, is_administrator INTEGER DEFAULT 0)""")
+        cursor.execute("""CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, userid TEXT NOT NULL UNIQUE, registeredIP TEXT, lastknownIP TEXT, username TEXT NOT NULL UNIQUE, password TEXT NOT NULL, ownerid TEXT NOT NULL, timedout INTEGER DEFAULT NULL, is_administrator INTEGER DEFAULT 0, api_key TEXT NOT NULL)""")
 
         # Create internals table for storing the salt
         cursor.execute("""
@@ -95,36 +97,6 @@ def DBProcessor(cmd, params=None):
     finally:
         databaselocked = False  # Unlock the database after execution
 
-# Process queued database actions
-""""
-async def processDBActions():
-    global databaselocked
-    while True:
-        if not dbActions:
-            await asyncio.sleep(1)  # Wait for new actions
-            continue
-
-        if databaselocked:
-            await asyncio.sleep(0.1)  # Wait for database to be unlocked
-            continue
-
-        # Lock the database
-        databaselocked = True
-
-        # Process all actions in the queue
-        with sqlite3.connect("database.db") as conn:
-            cursor = conn.cursor()
-            while dbActions:
-                action = dbActions.pop(0)
-                try:
-                    action(cursor)
-                except Exception as e:
-                    print(f"Error processing action: {e}")
-
-        # Unlock the database
-        databaselocked = False
-#
-"""
 
 # Hash and verify functions
 def hash_data(data):
@@ -141,10 +113,16 @@ def verify_hash(data, hashed):
 
 # Add, update, delete, and authenticate functions
 def add_user(userid, registeredIP, lastknownIP, username, password, ownerid, isAdmin):
+    # Generate a unique API key
+    api_key = secrets.token_hex(16)  # 32-character API key
     hashed_username = hash_data(username)
     hashed_password = hash_data(password)
-    return DBProcessor("INSERT INTO users (userid, registeredIP, lastknownIP, username, password, ownerid, timedout, is_administrator) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",(userid, registeredIP, lastknownIP, hashed_username, hashed_password, ownerid, 0, isAdmin)) or print(f"New user {userid} / {username} successfully added to the database!")
 
+    # Update the database query to include the API key
+    return DBProcessor(
+        "INSERT INTO users (userid, registeredIP, lastknownIP, username, password, ownerid, timedout, is_administrator, api_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (userid, registeredIP, lastknownIP, hashed_username, hashed_password, ownerid, 0, isAdmin, api_key)
+    ) or print(f"New user {userid} / {username} successfully added to the database with API key: {api_key}")
 
 
 def update_password(userid, new_password):

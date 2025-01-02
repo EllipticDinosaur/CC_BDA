@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        .container {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #message {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+    <script src="https://www.google.com/recaptcha/api.js?render=explicit"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Register</h1>
+        <form id="register-form">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+
+            <div id="recaptcha-container" class="hidden"></div>
+
+            <button type="submit">Register</button>
+        </form>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        let allowRecaptcha = false;
+        let recapchaKey = "";
+        
+        async function fetchConfig() {
+            try {
+                const response = await fetch("/bda/config");
+                const config = await response.json();
+                allowRecaptcha = config.allow_recapcha;
+                recapchaKey = config.recapcha_apikey;
+
+                if (allowRecaptcha && recapchaKey) {
+                    document.getElementById("recaptcha-container").classList.remove("hidden");
+                }
+            } catch (error) {
+                console.error("Failed to fetch configuration:", error);
+                document.getElementById("message").textContent = "Error loading configuration.";
+            }
+        }
+
+        async function registerUser(event) {
+            event.preventDefault();
+
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            let token = null;
+
+            if (allowRecaptcha && recapchaKey) {
+                try {
+                    token = await new Promise((resolve, reject) => {
+                        grecaptcha.render('recaptcha-container', {
+                            'sitekey': recapchaKey,
+                            'callback': resolve,
+                            'error-callback': reject
+                        });
+                    });
+                } catch (e) {
+                    document.getElementById("message").textContent = "Captcha validation failed.";
+                    return;
+                }
+            }
+
+            const payload = { username, password, token };
+            try {
+                const response = await fetch("/bda/api/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById("message").textContent = `Success!`;
+                } else {
+                    document.getElementById("message").textContent = `Error: ${result.message}`;
+                }
+            } catch (error) {
+                console.error("Registration failed:", error);
+                document.getElementById("message").textContent = "An error occurred during registration.";
+            }
+        }
+
+        document.getElementById("register-form").addEventListener("submit", registerUser);
+        fetchConfig();
+    </script>
+</body>
+</html>

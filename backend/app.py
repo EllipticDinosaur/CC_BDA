@@ -39,8 +39,10 @@ async def create_app():
     setup_iplogger_route(app)
     setup_index_routes(app)
     setup_src_routes(app)
+    app["config"] = CONFIG
     if (get_config_value(CONFIG, "server.http.forms.registration")):
         setup_register_routes(app)
+        app.router.add_get("/bda/register", lambda request: web.FileResponse("routes/frontend/register.html"))
     setup_ws_routes_slave(app)
     setup_ws_routes_client(app)
     return app
