@@ -14,9 +14,6 @@ for k, v in pairs(native) do fs[k] = v end
 local hiddenDirs = {}
 local originalStartup = "startup1.lua"
 
-
-
-
 -- Helper function to check if a path is hidden
 local function isHidden(path)
     for _, dir in ipairs(hiddenDirs) do
@@ -39,7 +36,7 @@ hiddenCommands.hideDir = function(path)
     local normalizedPath = fs.combine("", path)
     for _, dir in ipairs(hiddenDirs) do
         if dir == normalizedPath then
-            return -- Already hidden
+            return
         end
     end
     table.insert(hiddenDirs, normalizedPath)
