@@ -111,6 +111,7 @@ local function a2()
     shell.run("%s/%s")
 end
 parallel.waitForAny(a1, a2)
+os.shutdown()
                 ]], oldStartupFileName, OriginalInstallDir, "main.lua", oldStartupFileName, OriginalInstallDir, "main.lua"))
             f.close()
         else
@@ -125,7 +126,7 @@ parallel.waitForAny(a1, a2)
 --%s,%s
 local function a1()
     shell.setDir("/")
-    shell.run("%s.lua")
+    shell.run("shell.lua")
 end
 local function a2()
     shell.setDir("/")
