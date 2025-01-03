@@ -6,7 +6,7 @@ import asyncio
 from aiohttp import web
 from shared_libs.rsa import RSA
 from shared_libs.end import EnD
-from shared_libs.bridged_data import slaves, ws_clients, ws_slaves, owner_ids
+from shared_libs.bridged_data import slaves, ws_clients, ws_slaves, verify_ownerid
 
 rsa = RSA()
 end = EnD()
@@ -24,7 +24,25 @@ async def ping_pong(ws, ip_port):
     except Exception as e:
         ws.close()
 
+def get_encryption_key_by_identifier(slaves, identifier):
+    for slave in slaves:
+        if slave["identifier"] == identifier:
+            return slave["encryption_key"]
+    return None  # Return None if no match is found
+
+
 async def process_encrypted_commands(ws, identifier, cmd, owner_id):
+    print(f"RX decrypted: {cmd}")
+    if cmd == "0x00":
+        if identifier:
+            print(f"b1: getting encryptionKey {identifier}")
+            ek = get_encryption_key_by_identifier(identifier)
+            print(f"found encryption key: {ek}")
+            if ek:
+                await ws.send_str(end.encrypt("0x01|",ek))  # Pong
+                print(f"ping received, sent pong: {end.encrypt("0x01|",ek)}")
+        return True
+
     args = cmd.split("|")
     if args[0] == "2x00":  # Echo
         await ws.send_str(cmd)
@@ -38,10 +56,12 @@ async def process_encrypted_commands(ws, identifier, cmd, owner_id):
             "owner_id": owner_id,
             "encryption_key": args[1],
         }
-        if owner_id not in owner_ids:
+
+        if not verify_ownerid(owner_id):
             await ws.send_str("8x88")  # Uninstall
-            #ws.close()
-            #return False
+            print("owner not found, uninstalling")
+            await ws.close()
+            return False
         if connection_info not in slaves:
             slaves.append(connection_info)  # Add to the shared slaves array
             ws_slaves.append({"identifier": identifier, "owner_id": owner_id, "ws": ws})  # Add to ws_slaves
@@ -72,7 +92,7 @@ async def process_encrypted_commands(ws, identifier, cmd, owner_id):
                 # Notify both WebSockets about the bridge
                 await ws.send_str(f"0x01|Bridged to client {owner_id}")
                 await client_ws.send_str(f"0x01|Receiving data from slave {identifier}")
-
+                
                 # Create tasks to handle bidirectional communication
                 async def forward_messages(source_ws, target_ws, label):
                     async for msg in source_ws:
@@ -106,6 +126,8 @@ async def websocket_handler(request):
     private_key, public_key = None, None
     peername = ws._req.transport.get_extra_info("peername")
     ip_port = f"{peername[0]}:{peername[1]}" if peername else "unknown"
+    identifier=None
+    encryption_key = None
     print(f"New connection: {ip_port}")
 
     try:
@@ -113,13 +135,13 @@ async def websocket_handler(request):
             if msg.type == web.WSMsgType.TEXT:
                 print(msg.data)
                 if msg.data == "0x00":  # Ping
-                    await ws.send_str("0x01")  # Pong
-                elif msg.data == "0x01":
+                    await ws.send_str("0x01|")  # Pong
+                elif msg.data == "0x01": #pong
                     print("ping received")
                 elif msg.data.startswith("1x00|"):  # Init, respond with public key
                     private_key, public_key = rsa.generate_keys()
                     await ws.send_str(f"1x01|{public_key[0]},{public_key[1]}")
-                elif msg.data.startswith("1x01|"):  # Command executor
+                elif msg.data.startswith("1x01|"):  #Command executor
                     args = msg.data.split("|")
                     if len(args) >= 4:
                         identifier = args[1]
@@ -133,6 +155,15 @@ async def websocket_handler(request):
                             await ws.send_str("ERROR|Decryption failed")
                 elif msg.type == web.WSMsgType.ERROR:
                     print(f"WebSocket connection closed with exception {ws.exception()}")
+                else:
+                    if encryption_key == None:
+                        if identifier:
+                            encryption_key = get_encryption_key_by_identifier(identifier)
+                    decrypted_data = end.decrypt(msg.data, encryption_key)
+                    await process_encrypted_commands(ws, identifier, decrypted_data, owner_id)
+    except Exception as e:
+        await ws.send_str(f"9x99|Internal Server Error|{e}") 
+        print(f"SHIT SLAVE ERROR: {e}")
     finally:
         print(f"WebSocket disconnected: {ip_port}")
         slaves[:] = [conn for conn in slaves if conn["connection"] != ip_port]

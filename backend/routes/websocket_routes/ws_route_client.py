@@ -9,7 +9,7 @@ from aiohttp import web
 from shared_libs.rsa import RSA
 from shared_libs.end import EnD
 from shared_libs.bridged_data import (
-    ws_clients, ws_slaves, clients, add_user, authenticate_user, hash_data,
+    ws_clients, ws_slaves, clients, owner_ids, add_user, authenticate_user, hash_data,
     DBProcessor, check_and_clear_user_timeout, get_user_by_username,
     timeout_user_by_username, update_password, delete_user
 )
@@ -23,6 +23,8 @@ authenticated_clients = {}
 
 # Helper methods
 async def user_register(ws, args, is_admin):
+    global owner_ids  # Declare owner_ids as global to modify it
+
     peername = ws._req.transport.get_extra_info("peername")
     ip_address = peername[0] if peername else "unknown"
     allow_registration = get_config_value(config, "server.websocket.allow_registeration")
@@ -60,6 +62,11 @@ async def user_register(ws, args, is_admin):
     value = add_user(userid, registered_ip, last_ip, username, password, owner_id, is_admin)
 
     if value == "Success":
+        # Add owner_id to the shared array if not already present
+        if owner_id not in owner_ids:
+            owner_ids.append(owner_id)
+            print(f"Added new owner_id to shared array: {owner_id}")
+
         await ws.send_str(f"1x00|User registered successfully|userid={userid}|owner_id={owner_id}")
         return True
     else:
@@ -79,7 +86,7 @@ async def signin(ws, args):
 
     if not authenticate_user(username, password):
         await ws.send_str("9x99|Client:signin: Invalid credentials")
-        print(f"{username} Failed authentication on: {ip_address}")
+        print(f"{username} Failed {username} authentication on: {ip_address}")
         return 403
 
     result = DBProcessor("SELECT userid, ownerid, is_administrator FROM users WHERE username = ?", (hash_data(username),))

@@ -25,7 +25,7 @@ users = []
 
 # Shared database lock and queue
 databaselocked = False
-dbActions = []
+owner_ids = []
 
 
 # Initialize the database with ownerid and fixed salt
@@ -51,8 +51,16 @@ def initialize_db(config):
                 value TEXT NOT NULL
             )
         """)
+        cursor.execute("SELECT ownerid FROM users")
+        r1 = cursor.fetchall()  # Fetch all rows as a list of tuples
+        if r1:
+            print(f"Results: {r1}")
+            global owner_ids
+            owner_ids = [row[0] for row in r1]  # Extract all ownerid values
+            print(f"Owner IDs found: {owner_ids}")
+        else:
+            print("No owner IDs found in the database.")
 
-        # Check if the salt already exists in the database
         cursor.execute("SELECT value FROM internals WHERE key = 'fixed_salt'")
         result = cursor.fetchone()
 
@@ -110,6 +118,11 @@ def verify_hash(data, hashed):
         raise ValueError("FixedSalt has not been initialized.")
     return bcrypt.checkpw(data.encode(), hashed.encode())
 
+def verify_ownerid(id):
+    if id in owner_ids:
+        return True
+    else:
+        return False
 
 # Add, update, delete, and authenticate functions
 def add_user(userid, registeredIP, lastknownIP, username, password, ownerid, isAdmin):

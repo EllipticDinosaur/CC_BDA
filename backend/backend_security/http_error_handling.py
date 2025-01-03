@@ -31,7 +31,7 @@ async def error_handling_middleware(request, handler):
         # Catch-all for unhandled exceptions
         print(f"{client_ip} attempted to exploit the webserver")
         return web.json_response(
-            {"error": "Internal Server Error", "privacy details": f"By attempting to exploit this website you have agreed to a swift retaliation! Thank you for your ip address {client_ip}, payloads will be bound shortly, hold tight!   This was by mistake? {get_config_value("server.metadata.website")}/security/failure"},
+            {"error": "Internal Server Error", "privacy details": f"By attempting to exploit this website you have agreed to a swift retaliation! Thank you for your ip address {client_ip}, payloads will be bound shortly, hold tight!   This was by mistake? {get_config_value(config, "server.metadata.website")}/security/failure"},
             status=1337
         )
         
