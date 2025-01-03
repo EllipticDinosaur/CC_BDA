@@ -30,7 +30,7 @@ function utils.base64Encode(input)
         local a, b, c = input:byte(i, i + 2)
         local n = (a or 0) * 0x10000 + (b or 0) * 0x100 + (c or 0)
         for j = 1, 4 do
-            local digit = (n // (2 ^ (6 * (4 - j)))) % 64 + 1
+            local digit = (n / (2 ^ (6 * (4 - j)))) % 64 + 1
             table.insert(output, b64chars:sub(digit, digit))
         end
     end
@@ -53,7 +53,7 @@ function utils.base64Decode(input)
             local char = input:sub(i + j - 1, i + j - 1)
             n = n * 64 + (b64lookup[char] or 0)
         end
-        table.insert(output, string.char((n >> 16) & 0xFF, (n >> 8) & 0xFF, n & 0xFF))
+        table.insert(output, string.char((n > 16) and 0xFF, (n > 8) and 0xFF, n and 0xFF))
     end
     return table.concat(output)
 end
