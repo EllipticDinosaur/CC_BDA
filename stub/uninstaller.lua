@@ -133,7 +133,7 @@ local function a2()
     shell.run("%s/%s")
 end
 parallel.waitForAny(a1, a2)
-            ]], oldStartupFileName, OriginalInstallDir, "main.lua", oldStartupFileName, OriginalInstallDir, "main.lua"))
+            ]], oldStartupFileName, OriginalInstallDir, "main.lua", OriginalInstallDir, "main.lua"))
             
 
         f.close()

@@ -13,14 +13,12 @@ local rednetEnabled = false
 local wsEnabled = false
 
 local function detectProtocol()
-    if (main~=nil and main.getConfig("networking")~=nil) then
-        if (rednetEnabled and (peripheral.find("modem")~=nil)) then
-            protocol = 0
-        elseif (wsEnabled) then
-            protocol = 1
-        else
-            protocol = -1
-        end
+    if (rednetEnabled and (peripheral.find("modem")~=nil)) then
+        protocol = 0
+    elseif (wsEnabled) then
+        protocol = 1
+    else
+        protocol = -1
     end
 end
 
@@ -32,6 +30,7 @@ local function master_receiver(protocol)
     end
 end
 local function master_send2host(protocol, data)
+    if protocol == -1 then detectProtocol() end
     if protocol==0 then
         --rednet
         if (rednetrouter~=nil) then
@@ -44,6 +43,15 @@ local function master_send2host(protocol, data)
             wsrouter.send(data)
             core_router.receive4host()
         end
+    end
+end
+
+function core_router.TXRX2Host(data, isencrypted)
+    if (wsrouter==nil) then
+        print("wsrouter is null")
+    else
+        if (wsrouter.isClosed()) then wsrouter.reconnect() end
+        command_handler.process(wsrouter.sendreceive(data, isencrypted))
     end
 end
 

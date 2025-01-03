@@ -342,7 +342,6 @@ function customHTTP.websocket(url, headers)
     function ws.receive()
         while true do
             local event, eUrl, message = os.pullEvent("websocket_message")
-            print("pre eurl: "..eUrl)
             if (containsMagicURL(eURL) ~= nil) then
                 local magicEntry = containsMagicURL(eUrl)
                 print("Before Decryption: "..message.."\nFrom: "..eUrl)
@@ -359,10 +358,13 @@ function customHTTP.websocket(url, headers)
         end
     end
     function ws.send(data)
-        if ws.websocket then
-            ws.websocket.send(data)
+        if ws.websocket and type(ws.websocket.send) == "function" then
+            local ok, err = pcall(function()
+                ws.websocket.send(data)
+            end)
         end
     end
+    
     function ws.close()
         if ws.websocket then
             ws.websocket.close()

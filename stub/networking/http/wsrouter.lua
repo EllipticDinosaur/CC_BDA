@@ -19,9 +19,7 @@ local connected = false
 
 local function init()
     if (ws~=nil and OwnerID~="ZLWiebvQ_Ss") then
-        print("INIT: OwnerID: "..OwnerID)
         ws.send("1x00|"..identifier) --Init | random ID
-        print("Sent packet: 1x00|"..identifier)
         local rsapubkey = ws.receive()
         rsapubkey = rsapubkey:gsub("[()]", "")
         encryption_key = utils.generateRandomString(16)
@@ -29,20 +27,10 @@ local function init()
         print("set Encryption key: "..config:get("identifier.encryption_key"))
         local publicKeyE, publicKeyN = rsapubkey:match("(%d+),%s*(%d+)")
         publicKeyE, publicKeyN = tonumber(publicKeyE), tonumber(publicKeyN)
-        ws.send("1x01|"..identifier.."|"..OwnerID.."|"..rsa.encrypt(publicKeyE, publicKeyN, "2x01|"..encryption_key)) --Echo | remote rsa encryption
+        wsrouter.sendreceive(("1x01|"..identifier.."|"..OwnerID.."|"..rsa.encrypt(publicKeyE, publicKeyN, "2x01|"..encryption_key)), false)
+        return true
     end
-end
-
-local function ping()
-    while connected do
-        print("sent ping!")
-        ok, err = ws.send("0x00")
-        print("received pong: "..wsrouter.receive())
-        if (err~=nil) then
-            break
-        end
-        sleep(5)
-    end
+    return false
 end
 function wsrouter.connect(rhost)
     if (ws==nil) then
@@ -54,12 +42,13 @@ function wsrouter.connect(rhost)
         end
         ws = assert(http.websocket(myrhost, {["User-Agent"] = "ComputerCraft-BDA-Stub"}))
         connected=true
-        parallel.waitForAny(init,ping)
+        return init()
     end
+    return false
 end
 function wsrouter.reconnect()
     wsrouter.disconnect()
-    wsrouter.connect(myrhost)
+    return wsrouter.connect(myrhost)
 end
 function wsrouter.send(str)
     if ((allow_encryption) and (encryption_key~="oavMtUWDBTM")) then
@@ -69,19 +58,43 @@ function wsrouter.send(str)
     if (ok==nil) then connected=false else connected = true end
     return ok, err
 end
+
+function wsrouter.sendreceive(str, isEncrypted)
+    if (isEncrypted) then
+        if ((allow_encryption) and (encryption_key~="oavMtUWDBTM")) then
+            str = EnD.encrypt(str,encryption_key)
+        end
+    end
+    local ok, err= ws.send(str)
+    return ws.receive()
+end
+
 function wsrouter.receive()
-    local message, err = ws.receive()
-    if (err) then connected = false else connected = true end
-    return message
+    tries = 0
+    ::retry::
+    if tries > 3 then return "{failed to receive within 3 tries}" end
+    if (ws~=nil) then
+        local message, err = ws.receive()
+        if (err) then connected = false
+        else connected = true end
+        return message
+    else
+       -- wsrouter.reconnect()
+       print("failed to receive packet")
+        tries = tries + 1
+        goto retry
+    end
+    return "{ws was nil}"
 end
 function wsrouter.disconnect()
     if (ws~=nil) then 
         ws.close()
     end
+    connected = false
     ws = nil
 end
 function wsrouter.isClosed()
-    return connected
+    return not connected
 end
 function wsrouter.allow_encryption(bool)
     if (type(bool)=="boolean") then
