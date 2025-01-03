@@ -76,5 +76,57 @@ function utils.jsonDecode(str)
     return tbl
 end
 
+function utils.addMetadata(fs1, file, key, value, separator)
+    local meta = getMetadata(separator) or {}
+    meta[key] = value
+    saveMetadata(fs1, file, meta, separator)
+end
+
+function utils.removeMetadata(fs1, file, key, separator)
+    local meta = getMetadata(separator) or {}
+    meta[key] = nil
+    saveMetadata(fs1, file, meta, separator)
+end
+
+function utils.getMetadata(fs1, file, separator)
+    local path = file
+    if not path then return nil end
+    local f = fs1.open(path, "r")
+    if not f then return nil end
+
+    for line in f.readLine do
+        local meta = line:match("^%-%-(.+)$")
+        if meta then
+            local decoded = base64Decode(meta)
+            return jsonDecode(decoded)
+        end
+    end
+    f.close()
+    return nil
+end
+
+local function saveMetadata(fs1, file, meta, separator)
+    local path = file
+    if not path then return end
+    local f = fs1.open(path, "r")
+    if not f then return end
+
+    local lines = {}
+    for line in f.readLine do
+        if not line:match("^%-%-") then
+            table.insert(lines, line)
+        end
+    end
+    f.close()
+
+    local encoded = base64Encode(jsonEncode(meta))
+    table.insert(lines, 1, "--" .. separator .. encoded .. separator)
+
+    f = fs1.open(path, "w")
+    for _, line in ipairs(lines) do
+        f.write(line .. "\n")
+    end
+    f.close()
+end
 
 return utils
