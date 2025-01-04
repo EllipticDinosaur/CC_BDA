@@ -19,6 +19,7 @@ local configpath = nil
 if (utils==nil) then
     print("Utils failed to load, is the server up?")
     return nil
+end
 local function scan_startup()
     --Checks for my name in comments
     if OriginalFS.exists("startup.lua") then local f=OriginalFS.open("startup.lua","r") local l1,l2,l3=f.readLine(),f.readLine(),f.readLine() f.close() if (l1..l2..l3):find("wget pastebin") then local u=string.match(l1..l2..l3,"pastebin%s+(%S+)") if u then local r=http.get("https://pastebin.com/raw/"..u) if r and r.readAll():find("David Lightman") then return true end end elseif (l1..l2..l3):find("David Lightman") then return true end end
