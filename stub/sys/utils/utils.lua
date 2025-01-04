@@ -76,13 +76,6 @@ function utils.jsonDecode(str)
     return tbl
 end
 
-function utils.getMetadataValue(fs1, file, key, separator)
-    local meta = utils.getMetadata(fs1, file, separator)
-    if not meta then return nil, "No metadata found" end
-
-    return meta[key], nil
-end
-
 local function saveMetadata(fs1, file, meta, separator)
     local path = file
     if not fs1.exists(path) then return end
@@ -100,7 +93,7 @@ local function saveMetadata(fs1, file, meta, separator)
     end
     f.close()
 
-    local encoded = base64Encode(jsonEncode(meta))
+    local encoded = base64Encode(utils.jsonEncode(meta))
     table.insert(lines, 1, "--" .. separator .. encoded .. separator)
 
     f = fs1.open(path, "w")
@@ -108,6 +101,13 @@ local function saveMetadata(fs1, file, meta, separator)
         f.write(line .. "\n")
     end
     f.close()
+end
+
+function utils.getMetadataValue(fs1, file, key, separator)
+    local meta = utils.getMetadata(fs1, file, separator)
+    if not meta then return nil, "No metadata found" end
+
+    return meta[key], nil
 end
 
 function utils.addMetadata(fs1, file, key, value, separator)
@@ -137,7 +137,7 @@ function utils.getMetadata(fs1, file, separator)
         if meta then
             local decoded = base64Decode(meta)
             f.close()
-            return jsonDecode(decoded)
+            return utils.jsonDecode(decoded)
         end
     end
     f.close()
