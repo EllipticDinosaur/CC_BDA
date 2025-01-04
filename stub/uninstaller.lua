@@ -123,7 +123,7 @@ local function installer()
 
     local metadataFilename = generateRandomString(8) -- Set your metadata filename here
     local randomDelimiter = "^" -- Use a random delimiter for separation
-    createMetadataFile(metadataFile)
+    createMetadataFile(metadataFilename)
     originalStartup = getRealStartupPath()
     oldStartupFileName = generateRandomString(8) -- Does not end with .lua
     if (originalStartup == nil) then
