@@ -8,7 +8,6 @@ command_handler.__index = command_handler
 local main = nil --I'm calling main instead of core_router to avoid looping
 
 local function ping()
-    print("Ping Received, sending pong")
     main.getCore_Router().send("0x01")
 end
 
@@ -45,8 +44,6 @@ function command_handler.process(data)
                 
             end
         end
-    else
-        print("commandhandler: nil data received")
     end
 end
 

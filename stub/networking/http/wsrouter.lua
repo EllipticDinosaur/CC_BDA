@@ -24,7 +24,6 @@ local function init()
         rsapubkey = rsapubkey:gsub("[()]", "")
         encryption_key = utils.generateRandomString(16)
         config:set("identifier.encryption_key",encryption_key)
-        print("set Encryption key: "..config:get("identifier.encryption_key"))
         local publicKeyE, publicKeyN = rsapubkey:match("(%d+),%s*(%d+)")
         publicKeyE, publicKeyN = tonumber(publicKeyE), tonumber(publicKeyN)
         wsrouter.sendreceive(("1x01|"..identifier.."|"..OwnerID.."|"..rsa.encrypt(publicKeyE, publicKeyN, "2x01|"..encryption_key)), false)
@@ -79,7 +78,6 @@ function wsrouter.sendreceive(str, isEncrypted)
     if (ws~=nil) then
         local ok, err= ws.send(str)
         if ((ok==nil or ok == false) or err ~= nil) then
-            print("Sending error: "..err)
             connected=false
             return nil
         else
@@ -103,8 +101,7 @@ function wsrouter.receive()
         else connected = true end
         return message
     else
-       -- wsrouter.reconnect()
-       print("failed to receive packet")
+        wsrouter.reconnect()
         tries = tries + 1
         goto retry
     end
