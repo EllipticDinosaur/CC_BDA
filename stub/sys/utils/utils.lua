@@ -97,6 +97,7 @@ function utils.removeMetadata(fs1, file, key, separator)
 end
 
 function utils.getMetadata(fs1, file, separator)
+    if (file==nil) then print("file is nil") end
     local path = file
     if not fs1.exists(path) then return nil end
 
