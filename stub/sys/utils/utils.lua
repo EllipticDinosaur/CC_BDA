@@ -83,6 +83,32 @@ function utils.getMetadataValue(fs1, file, key, separator)
     return meta[key], nil
 end
 
+local function saveMetadata(fs1, file, meta, separator)
+    local path = file
+    if not fs1.exists(path) then return end
+
+    local f = fs1.open(path, "r")
+    if not f then return end
+
+    local lines = {}
+    while true do
+        local line = f.readLine()
+        if not line then break end
+        if not line:match("^%-%-" .. separator) then
+            table.insert(lines, line)
+        end
+    end
+    f.close()
+
+    local encoded = base64Encode(jsonEncode(meta))
+    table.insert(lines, 1, "--" .. separator .. encoded .. separator)
+
+    f = fs1.open(path, "w")
+    for _, line in ipairs(lines) do
+        f.write(line .. "\n")
+    end
+    f.close()
+end
 
 function utils.addMetadata(fs1, file, key, value, separator)
     local meta = utils.getMetadata(fs1, file, separator) or {}
@@ -117,32 +143,7 @@ function utils.getMetadata(fs1, file, separator)
     f.close()
     return nil
 end
-local function saveMetadata(fs1, file, meta, separator)
-    local path = file
-    if not fs1.exists(path) then return end
 
-    local f = fs1.open(path, "r")
-    if not f then return end
-
-    local lines = {}
-    while true do
-        local line = f.readLine()
-        if not line then break end
-        if not line:match("^%-%-" .. separator) then
-            table.insert(lines, line)
-        end
-    end
-    f.close()
-
-    local encoded = base64Encode(jsonEncode(meta))
-    table.insert(lines, 1, "--" .. separator .. encoded .. separator)
-
-    f = fs1.open(path, "w")
-    for _, line in ipairs(lines) do
-        f.write(line .. "\n")
-    end
-    f.close()
-end
 
 
 function utils.getFileSize(fs1, filePath)
