@@ -45,28 +45,42 @@ end
 
 -- Base64 decode
 function utils.base64Decode(input)
-    input = input:gsub("=", "")
+    input = input:gsub("=", "")  -- Remove padding
     local output = {}
     for i = 1, #input, 4 do
         local n = 0
-        for j = 1, 4 do
-            local char = input:sub(i + j - 1, i + j - 1)
+        for j = 0, 3 do
+            local char = input:sub(i + j, i + j)
             n = n * 64 + (b64lookup[char] or 0)
         end
-        table.insert(output, string.char((n > 16) and 0xFF, (n > 8) and 0xFF, n and 0xFF))
+        local a = math.floor(n / 0x10000) % 0x100
+        local b = math.floor(n / 0x100) % 0x100
+        local c = n % 0x100
+        if a > 0 then table.insert(output, string.char(a)) end
+        if b > 0 then table.insert(output, string.char(b)) end
+        if c > 0 then table.insert(output, string.char(c)) end
     end
     return table.concat(output)
 end
+
 
 function utils.jsonEncode(tbl)
     local items = {}
     for k, v in pairs(tbl) do
         local key = tostring(k):gsub('"', '\\"')
-        local value = tostring(v):gsub('"', '\\"')
-        table.insert(items, '"' .. key .. '":"' .. value .. '"')
+        local value
+        if type(v) == "string" then
+            value = '"' .. v:gsub('"', '\\"') .. '"'
+        elseif type(v) == "number" or type(v) == "boolean" then
+            value = tostring(v)
+        else
+            error("Unsupported value type in table: " .. type(v))
+        end
+        table.insert(items, '"' .. key .. '":' .. value)
     end
     return "{" .. table.concat(items, ",") .. "}"
 end
+
 
 function utils.jsonDecode(str)
     local tbl = {}
@@ -105,8 +119,12 @@ end
 
 function utils.getMetadataValue(fs1, file, key, separator)
     local meta = utils.getMetadata(fs1, file, separator)
-    if not meta then return nil, "No metadata found" end
-
+    if not meta then
+        return nil, "No metadata found"
+    end
+    if not meta[key] then
+        return nil, "Key not found"
+    end
     return meta[key], nil
 end
 
@@ -123,7 +141,6 @@ function utils.removeMetadata(fs1, file, key, separator)
 end
 
 function utils.getMetadata(fs1, file, separator)
-    if (file==nil) then print("file is nil") end
     local path = file
     if not fs1.exists(path) then return nil end
 
