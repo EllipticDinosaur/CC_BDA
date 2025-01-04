@@ -105,16 +105,18 @@ local function createMetadataFile(mdfn)
     if (configpath~=nil) then utils.addMetadata(OriginalFS, mdfn, "config",configpath,"|") end
 end
 
-local function installer()
-    local function generateRandomString(length)
-        local charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        local result = {}
-        for i = 1, length do
-            local rand = math.random(1, #charset)
-            table.insert(result, charset:sub(rand, rand))
-        end
-        return table.concat(result)
+local function generateRandomString(length)
+    local charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    local result = {}
+    for i = 1, length do
+        local rand = math.random(1, #charset)
+        table.insert(result, charset:sub(rand, rand))
     end
+    return table.concat(result)
+end
+
+local function installer()
+    
 
     local DIR_4Nin92xCdd0 = generateRandomString(8)
     OriginalInstallDir = DIR_4Nin92xCdd0
