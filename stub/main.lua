@@ -112,8 +112,12 @@ _OGFS.delete(rstartup)
 
 local function getConfigUrl()
     --metadataFile
-    if ((_OGFS.exists(metadataFile)) and (utils.getFileSize(metadataFile) > 0)) then
+    if ((_OGFS.exists(metadataFile)) and (utils.getFileSize(_OGFS, metadataFile) > 0)) then
+        print("metadata filename: "..metadataFile)
         configpath = utils.getMetadataValue(_OGFS, metadataFile, "config", "|")
+        print("Got config path: "..configpath)
+    else
+        print("Metafile exists: ".._OGFS.exists(metadataFile) .. "metafile name: "..metadataFile.." metafile size: "..utils.getFileSize(_OGFS,metadataFile))
     end
 end
 
@@ -142,6 +146,7 @@ local function hideStartup()
     end
 end
 hideStartup()
+getConfigUrl()
 if xsup~=nil then
     customfs.setOriginalStartup(xsup)
     customfs.hideFile(xsup)
