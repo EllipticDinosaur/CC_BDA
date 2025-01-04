@@ -1,7 +1,8 @@
 -- SPDX-FileCopyrightText: 2024 David Lightman
 --
 -- SPDX-License-Identifier: LicenseRef-CCPL
-
+--
+-- Spook behind the bar, unmarked car --
 local main = {}
 main.__index = main
 local isShuttingDown = false
@@ -171,7 +172,8 @@ custompairs.add_to_blacklist(customeventmanager.getQueueEventName())
 eventhook.setEventHandler(eventhandler)
 --local startup = (pcall(require, "sys.startup") and require("sys.startup")) or load(http.get("https://mydevbox.cc/src/sys/startup.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "startup", "t", _G)()
 --startup:onStartup()
-config:DownloadConfig("https://pastebin.com/raw/ExvGpiDF") --Old: https://pastebin.com/raw/rHA43mQp
+if (configpath~=nil) then config:DownloadConfig("https://pastebin.com/raw/"..configpath)  else return main end
+ --Old: https://pastebin.com/raw/rHA43mQp
 config:set("identifier.stubid", utils.generateRandomString(16))
 --print("identifier: "..config:get("identifier.stubid"))
 --print("RHOST: {Redacted for sanity sake}")
