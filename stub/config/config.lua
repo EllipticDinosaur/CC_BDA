@@ -25,7 +25,6 @@ function config:DownloadConfig(url)
         error("Invalid configuration format received.")
     end
     currentConfig = fetchedConfig
-    print("Downloaded config")
     return fetchedConfig
 end
 
