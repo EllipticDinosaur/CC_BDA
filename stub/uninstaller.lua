@@ -101,7 +101,9 @@ local function uninstall(ogfs, dir)
 end
 
 local function createMetadataFile(mdfn)
-    if (mdfn==nil) then print("mdfn is nil") end
+    if (mdfn==nil) then print("uninstaller.lua: metadatafilename is nil") end
+    local f = OriginalFS.open(mdfn, "w")
+    f.close()
     if (configpath~=nil) then utils.addMetadata(OriginalFS, mdfn, "config",configpath,"|") end
 end
 
