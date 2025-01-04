@@ -362,6 +362,7 @@ function customHTTP.websocket(url, headers)
             local ok, err = pcall(function()
                 ws.websocket.send(data)
             end)
+            return ok, err
         end
     end
     

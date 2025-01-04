@@ -66,7 +66,11 @@ function wsrouter.sendreceive(str, isEncrypted)
         end
     end
     local ok, err= ws.send(str)
-    return ws.receive()
+    if (ok==nil or ok == false) then connected=false else connected = true end
+    if ok then
+        return ws.receive()
+    end
+    return nil
 end
 
 function wsrouter.receive()

