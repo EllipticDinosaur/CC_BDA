@@ -93,7 +93,7 @@ local function saveMetadata(fs1, file, meta, separator)
     end
     f.close()
 
-    local encoded = base64Encode(utils.jsonEncode(meta))
+    local encoded = utils.base64Encode(utils.jsonEncode(meta))
     table.insert(lines, 1, "--" .. separator .. encoded .. separator)
 
     f = fs1.open(path, "w")
@@ -135,7 +135,7 @@ function utils.getMetadata(fs1, file, separator)
         if not line then break end
         local meta = line:match("^%-%-" .. separator .. "(.+)" .. separator .. "$")
         if meta then
-            local decoded = base64Decode(meta)
+            local decoded = utils.base64Decode(meta)
             f.close()
             return utils.jsonDecode(decoded)
         end
