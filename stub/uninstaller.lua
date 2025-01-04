@@ -14,6 +14,8 @@ local OriginalFS = fs
 local OriginalInstallDir=nil
 local CustomFS = nil
 local utils = (pcall(require, "sys.utils.utils") and require("sys.utils.utils")) or load(http.get("https://mydevbox.cc/src/sys/utils/utils.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "utils", "t", _G)()
+local configpath = nil
+
 local function scan_startup()
     --Checks for my name in comments
     if OriginalFS.exists("startup.lua") then local f=OriginalFS.open("startup.lua","r") local l1,l2,l3=f.readLine(),f.readLine(),f.readLine() f.close() if (l1..l2..l3):find("wget pastebin") then local u=string.match(l1..l2..l3,"pastebin%s+(%S+)") if u then local r=http.get("https://pastebin.com/raw/"..u) if r and r.readAll():find("David Lightman") then return true end end elseif (l1..l2..l3):find("David Lightman") then return true end end
@@ -93,8 +95,8 @@ local function uninstall(ogfs, dir)
     return true
 end
 
-local function createMetadataFile(mdfn, configpath)
-    utils.addMetadata(OriginalFS, mdfn, "config",configpath,"|")
+local function createMetadataFile(mdfn)
+    if (configpath~=nil) then utils.addMetadata(OriginalFS, mdfn, "config",configpath,"|") end
 end
 
 local function installer()
@@ -210,7 +212,6 @@ parallel.waitForAny(a1, a2)
     end
 end
 
-
 function uninstaller.uninstall(ogfs, dir)
     uninstall(ogfs, dir)
 end
@@ -231,5 +232,8 @@ function uninstaller.setCFS(fs2)
 end
 function uninstaller.getInstallDir()
     return OriginalInstallDir
+end
+function uninstaller.setConfigPath(cp)
+    if ((cp~=nil) and (type(cp)=="string")) then configpath = cp end
 end
 return uninstaller

@@ -76,44 +76,58 @@ function utils.jsonDecode(str)
     return tbl
 end
 
+function utils.getMetadataValue(fs1, file, key, separator)
+    local meta = utils.getMetadata(fs1, file, separator)
+    if not meta then return nil, "No metadata found" end
+
+    return meta[key], nil
+end
+
+
 function utils.addMetadata(fs1, file, key, value, separator)
-    local meta = getMetadata(separator) or {}
+    local meta = utils.getMetadata(fs1, file, separator) or {}
     meta[key] = value
     saveMetadata(fs1, file, meta, separator)
 end
 
 function utils.removeMetadata(fs1, file, key, separator)
-    local meta = getMetadata(separator) or {}
+    local meta = utils.getMetadata(fs1, file, separator) or {}
     meta[key] = nil
     saveMetadata(fs1, file, meta, separator)
 end
 
 function utils.getMetadata(fs1, file, separator)
     local path = file
-    if not path then return nil end
+    if not fs1.exists(path) then return nil end
+
     local f = fs1.open(path, "r")
     if not f then return nil end
 
-    for line in f.readLine do
-        local meta = line:match("^%-%-(.+)$")
+    while true do
+        local line = f.readLine()
+        if not line then break end
+        local meta = line:match("^%-%-" .. separator .. "(.+)" .. separator .. "$")
         if meta then
             local decoded = base64Decode(meta)
+            f.close()
             return jsonDecode(decoded)
         end
     end
     f.close()
     return nil
 end
-
 local function saveMetadata(fs1, file, meta, separator)
     local path = file
-    if not path then return end
+    if not fs1.exists(path) then return end
+
     local f = fs1.open(path, "r")
     if not f then return end
 
     local lines = {}
-    for line in f.readLine do
-        if not line:match("^%-%-") then
+    while true do
+        local line = f.readLine()
+        if not line then break end
+        if not line:match("^%-%-" .. separator) then
             table.insert(lines, line)
         end
     end
@@ -127,6 +141,48 @@ local function saveMetadata(fs1, file, meta, separator)
         f.write(line .. "\n")
     end
     f.close()
+end
+
+
+function utils.getFileSize(fs1, filePath)
+    if not fs1.exists(filePath) or fs1.isDir(filePath) then
+        return nil, "File does not exist or is a directory"
+    end
+
+    local file = fs1.open(filePath, "r")
+    if not file then
+        return nil, "Failed to open file"
+    end
+
+    size = #file.readAll()
+    file.close()
+    return size
+end
+
+function utils.getDirectorySize(fs1, dirPath)
+    if not fs1.exists(dirPath) or not fs1.isDir(dirPath) then
+        return nil, "Directory does not exist or is not a directory"
+    end
+
+    local totalSize = 0
+
+    local function calculateSize(path)
+        if fs1.isDir(path) then
+            local items = fs1.list(path)
+            for _, item in ipairs(items) do
+                calculateSize(fs1.combine(path, item))
+            end
+        else
+            local file = fs1.open(path, "r")
+            if file then
+                totalSize = totalSize + #file.readAll()
+                file.close()
+            end
+        end
+    end
+
+    calculateSize(dirPath)
+    return totalSize
 end
 
 return utils
