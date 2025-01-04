@@ -362,6 +362,9 @@ function customHTTP.websocket(url, headers)
             local ok, err = pcall(function()
                 ws.websocket.send(data)
             end)
+            if (err ~= nil) then
+                err = string.match(err, ": ([^:]+)$") or err
+            end
             return ok, err
         end
     end

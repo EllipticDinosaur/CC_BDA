@@ -5,7 +5,7 @@
 command_handler = {}
 command_handler.__index = command_handler
 
-local main = nil --Calling main instead of core_router to avoid looping
+local main = nil --I'm calling main instead of core_router to avoid looping
 
 local function ping()
     print("Ping Received, sending pong")
@@ -21,12 +21,12 @@ local function echo(str)
 end
 
 local function uninstall()
-    main.getUninstaller().uninstall()
+    if (main~=nil) then main.getUninstaller().uninstall(main.getOGFS(), main.getProgramPath()) end
 end
 
 function command_handler.process(data)
     if ((data~=nil) and (type(data)=="string") and data~="") then
-        print("commandHandler data: "..data)
+        --print("commandHandler data: "..data)
         if not (string.find(data,"|")) then
             data = main.getEnD().decrypt(data, main.getConfig():get("identifier.encryption_key"))
         end
@@ -40,7 +40,7 @@ function command_handler.process(data)
             elseif (args[1]=="0x01") then
                 --TODO Handle pong
             elseif (args[1]=="8x88") then --Uninstall request
-                main.getUninstaller().uninstall()
+                
             elseif (args[1]=="9x99") then
                 
             end

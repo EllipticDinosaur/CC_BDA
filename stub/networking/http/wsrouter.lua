@@ -33,19 +33,24 @@ local function init()
     return false
 end
 function wsrouter.connect(rhost)
-    if (ws==nil) then
-        local myrhost=nil
-        if (not string.find(rhost,"wss://")) then
-            myrhost = "wss://"..rhost
+    if ws == nil then
+        if not string.find(rhost, "wss://") then
+            myrhost = "wss://" .. rhost
         else
-            myrhost=rhost
+            myrhost = rhost
         end
-        ws = assert(http.websocket(myrhost, {["User-Agent"] = "ComputerCraft-BDA-Stub"}))
-        connected=true
-        return init()
+        local ok, websocket = pcall(function()
+            return assert(http.websocket(myrhost, { ["User-Agent"] = "ComputerCraft-BDA-Stub" }))
+        end)
+        if ok then
+            ws = websocket
+            connected = true
+            return init()
+        end
     end
     return false
 end
+
 function wsrouter.reconnect()
     wsrouter.disconnect()
     return wsrouter.connect(myrhost)
@@ -54,9 +59,15 @@ function wsrouter.send(str)
     if ((allow_encryption) and (encryption_key~="oavMtUWDBTM")) then
         str = EnD.encrypt(str,encryption_key)
     end
-    local ok,err= ws.send(str)
-    if (ok==nil) then connected=false else connected = true end
-    return ok, err
+    if (ws~=nil) then
+        local ok,err= ws.send(str)
+        if (ok==nil) then connected=false else connected = true end
+        return ok, err
+    else
+        connected=false
+        return nil, nil
+    end
+    
 end
 
 function wsrouter.sendreceive(str, isEncrypted)
@@ -65,12 +76,21 @@ function wsrouter.sendreceive(str, isEncrypted)
             str = EnD.encrypt(str,encryption_key)
         end
     end
-    local ok, err= ws.send(str)
-    if (ok==nil or ok == false) then connected=false else connected = true end
-    if ok then
-        return ws.receive()
+    if (ws~=nil) then
+        local ok, err= ws.send(str)
+        if ((ok==nil or ok == false) or err ~= nil) then
+            print("Sending error: "..err)
+            connected=false
+            return nil
+        else
+            connected = true
+            return ws.receive()
+        end
+    else
+        connected=false
+        return nil
     end
-    return nil
+    
 end
 
 function wsrouter.receive()
