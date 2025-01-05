@@ -26,7 +26,7 @@ local function scan_startup()
     return false
 end
 
-local function uninstaller(_OGFS)
+local function uninstall(_OGFS)
     -- Copy startup to a temporary file
     local rstartup = utils.generateRandomString(3)
     _OGFS.copy("startup.lua", rstartup)
