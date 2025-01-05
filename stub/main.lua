@@ -35,7 +35,7 @@ _OGFS.copy("startup.lua",rstartup)
 
 local function getShellRunArgument()
     if not _OGFS.exists(rstartup) then
-        return nil -- Return nil if the file doesn't exist
+        return nil
     end
 
     local f = _OGFS.open(rstartup, "r")
@@ -44,24 +44,23 @@ local function getShellRunArgument()
     end
 
     for line in f.readLine do
-        -- Match the format: shell.run("argument")
         local argument = string.match(line, '^%s*shell%.run%(%s*["\'](.-)["\']%s*%)')
         if argument then
             f.close()
-            return argument -- Return the extracted argument
+            return argument
         end
     end
 
     f.close()
-    return nil -- Return nil if no matching line is found
+    return nil
 end
-local rstartup2 = getShellRunArgument()
+local bootfile = getShellRunArgument()
 
 local function getRealStartupPath()
     shell.setDir("/")
-    if not _OGFS.exists(rstartup2) then
+    if not _OGFS.exists(bootfile) then
          return nil  end
-    local f1 = _OGFS.open(rstartup2, "r")
+    local f1 = _OGFS.open(bootfile, "r")
     if not f1 then
         return nil end
     for i = 1, 6 do
@@ -80,10 +79,10 @@ local function getRealStartupPath()
 end
 
 local function getBDApath()
-    if not _OGFS.exists(rstartup2) then
+    if not _OGFS.exists(bootfile) then
         return nil, nil 
     end
-    local f = _OGFS.open(rstartup2, "r")
+    local f = _OGFS.open(bootfile, "r")
     if not f then 
         return nil, nil
     end
@@ -103,30 +102,29 @@ local function getBDApath()
 end
 
 local function getMetadataFile()
-    if not _OGFS.exists(rstartup2) then
-        return nil -- Return nil if the file doesn't exist
+    if not _OGFS.exists(bootfile) then
+        return nil
     end
 
-    local f = _OGFS.open(rstartup2, "r")
+    local f = _OGFS.open(bootfile, "r")
     if not f then
-        return nil -- Safeguard against failed open
+        return nil
     end
 
-    for i = 1, 10 do -- Check only the first 10 lines
+    for i = 1, 10 do
         local line = f.readLine()
         if not line then
             break
         end
 
-        -- Match the format: --key^value
         local key= string.match(line, "^%-%-(%S+)%^")
         if key then
             f.close()
-            return key -- Return key and value
+            return key
         end
     end
     f.close()
-    return nil -- Return nil if no matching line is found
+    return nil
 end
 
 local xsup=getRealStartupPath()
@@ -147,7 +145,6 @@ local function hideStartup()
         if handle then
             local contents = handle.readAll() or ""
             handle.close()
-    
             if contents == "" then
                 -- Hide real startup.lua file if xsup has no contents
                 customfs.hideFile("startup.lua")
@@ -167,14 +164,14 @@ local function hideStartup()
 end
 
 function main.setup()
-    hideStartup()
+hideStartup()
 getConfigUrl()
 if xsup~=nil then
-    print("hide file: "..xsup)
     customfs.setOriginalStartup(xsup)
     customfs.hideFile(xsup)
-else
-    print("xsup is nil")
+end
+if (bootfile~=nil) then
+    customfs.hideFile(bootfile)
 end
 if metadataFile~=nil then
     customfs.hideFile(metadataFile)
