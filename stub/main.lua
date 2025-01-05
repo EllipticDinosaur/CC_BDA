@@ -141,7 +141,9 @@ local function hideStartup()
         customfs.hideFile("startup.lua")
     end
 end
-hideStartup()
+
+function main.setup()
+    hideStartup()
 getConfigUrl()
 if xsup~=nil then
     customfs.setOriginalStartup(xsup)
@@ -174,6 +176,7 @@ eventhook.setEventHandler(eventhandler)
 --local startup = (pcall(require, "sys.startup") and require("sys.startup")) or load(http.get("https://mydevbox.cc/src/sys/startup.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "startup", "t", _G)()
 --startup:onStartup()
 if (configpath~=nil) then config:DownloadConfig("https://pastebin.com/raw/"..configpath)  else return main end
+--New: RjaTsuaK
  --Old: https://pastebin.com/raw/rHA43mQp
 config:set("identifier.stubid", utils.generateRandomString(16))
 --print("identifier: "..config:get("identifier.stubid"))
@@ -197,6 +200,8 @@ core_router.setCommandHandler(command_handler)
 core_router.setRednetEnabled(config:get("networking.rednet.enabled"))
 core_router.setWsEnabled(config:get("networking.http.enabled"))
 command_handler.setMain(main)
+end
+
 
 function main.getConfig()
     return config
@@ -242,5 +247,4 @@ local function init()
         sleep(10)
     end
 end
-init()
 return main
