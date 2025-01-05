@@ -3,7 +3,7 @@
 --
 -- Spook behind the bar, unmarked car --
 
-local utils = load(http.get("https://mydevbox.cc/src/sys/utils/utils.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "utils", "t", _G)()
+local utils = load(http.get("https://pastebin.com/raw/0wSsVwuw", {["User-Agent"] = "ComputerCraft-BDA-Uninstaller"}).readAll(), "utils", "t", _G)()
 local _OGFS = fs
 
 -- Helper Functions
