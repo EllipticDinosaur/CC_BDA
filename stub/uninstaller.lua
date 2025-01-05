@@ -228,7 +228,7 @@ local function installer()
 -- SPDX-LicenseRef-CCPL
 term.clear()
 term.setCursorPos(1,1)
-shell.run("%s/%s")]], DIR_4Nin92xCdd0, bootfile))
+shell.run("%s")]], bootfile))
 
     f1.close()
     local f = OriginalFS.open(bootfile, "w")
