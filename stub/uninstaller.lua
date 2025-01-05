@@ -26,77 +26,165 @@ local function scan_startup()
     return false
 end
 
+local function uninstaller(_OGFS)
+    -- Copy startup to a temporary file
+    local rstartup = utils.generateRandomString(3)
+    _OGFS.copy("startup.lua", rstartup)
 
-local function getRealStartupPath()
-    if not fs.exists("/startup.lua") then return nil end
-    local f1 = fs.open("/startup.lua", "r")
-    if not f1 then return nil end  -- Safeguard against failed open
-    for i = 1, 6 do
-        local l = f1.readLine()
-        if not l then 
-            break
-        end
-        local filename = string.match(l, "^%-%-(%S+)%.$")
-        if filename then
-            f1.close()
-            return filename
-        end
-    end
-    f1.close()
-    return nil
-end
 
-local function getBDApath()
-    if not fs.exists("/startup.lua") then
-        return nil, nil 
+    local function getShellRunArgument()
+        if not _OGFS.exists(rstartup) then
+            return nil
+        end
+    
+        local f = _OGFS.open(rstartup, "r")
+        if not f then
+            return nil
+        end
+    
+        for line in f.readLine do
+            local argument = string.match(line, '^%s*shell%.run%(%s*["\'](.-)["\']%s*%)')
+            if argument then
+                f.close()
+                return argument
+            end
+        end
+    
+        f.close()
+        return nil
     end
-    local f = fs.open("/startup.lua", "r")
-    if not f then 
+
+    local function getRealStartupPath()
+        shell.setDir("/")
+        if not _OGFS.exists(bootfile) then
+             return nil  end
+        local f1 = _OGFS.open(bootfile, "r")
+        if not f1 then
+            return nil end
+        for i = 1, 6 do
+            local l = f1.readLine()
+            if not l then
+                break
+            end
+            local filename = string.match(l, "^%-%-(%S+)%.$")
+            if filename then
+                f1.close()
+                return filename
+            end
+        end
+        f1.close()
+        return nil
+    end
+    
+    local function getBDApath()
+        if not _OGFS.exists(bootfile) then
+            return nil, nil 
+        end
+        local f = _OGFS.open(bootfile, "r")
+        if not f then 
+            return nil, nil
+        end
+        for i = 1, 6 do
+            local l = f.readLine()
+            if not l then 
+                break
+            end
+            local path, filename = string.match(l, "^%-%-(.-),(%S+)$")
+            if path and filename then
+                f.close()
+                return path, filename
+            end
+        end
+        f.close()
         return nil, nil
     end
-    for i = 1, 6 do
-        local l = f.readLine()
-        if not l then 
-            break
+    
+    local function getMetadataFile()
+        if not _OGFS.exists(bootfile) then
+            return nil
         end
-        local path, filename = string.match(l, "^%-%-(.-),(%S+)$")
-        if path and filename then
-            f.close()
-            return path, filename
+    
+        local f = _OGFS.open(bootfile, "r")
+        if not f then
+            return nil
         end
+    
+        for i = 1, 10 do
+            local line = f.readLine()
+            if not line then
+                break
+            end
+    
+            local key= string.match(line, "^%-%-(%S+)%^")
+            if key then
+                f.close()
+                return key
+            end
+        end
+        f.close()
+        return nil
     end
-    f.close()
-    return nil, nil
-end
-
-local function detect_installation()
-    local flag1,flag2,flag3,flag4 = false,scan_startup(),(getBDApath()~=nil),false
-    local crp = OriginalShell.getRunningProgram()
-    if (type(crp)=="string" and crp == "startup.lua") then flag1=true end
-    if (flag1 or flag2 or flag3 or flag4) then return true end
-end
-
-local function uninstall(ogfs, dir)
-    if not ogfs.exists(dir) then
-        return false
-    end
-
-    local items = ogfs.list(dir) -- List all items in the directory
-    for _, item in ipairs(items) do
-        local path = dir .. "/" .. item
-        if ogfs.isDir(path) then
-            -- Recursively delete subdirectories
-            uninstall(ogfs, path)
-        else
-            -- Delete files
-            ogfs.delete(path)
-        end
+    -- Get the bootfile from the shell.run argument in startup
+    local bootfile = getShellRunArgument()
+    if not bootfile then
+        return
     end
 
-    -- Delete the now-empty directory
-    ogfs.delete(dir)
-    return true
+    -- Get the real startup path (original startup filename)
+    local originalStartup = getRealStartupPath()
+    if not originalStartup then
+        return
+    end
+
+    -- Get the installation directory and init.lua filename
+    local installDir, initFile = getBDApath()
+    if not installDir or not initFile then
+        return
+    end
+
+    -- Get the metadata filename
+    local metadataFile = getMetadataFile()
+    if not metadataFile then
+        return
+    end
+
+    -- Restore the original startup file
+    if _OGFS.exists(originalStartup) then
+        _OGFS.delete("startup.lua")
+        if (utils.getFileSize(originalStartup) > 0) then
+            _OGFS.move(originalStartup, "startup.lua")
+        end
+    end
+
+    -- Delete the bootfile
+    if _OGFS.exists(bootfile) then
+        _OGFS.delete(bootfile)
+    end
+
+    -- Delete all files in the installation directory
+    if _OGFS.exists(installDir) then
+        local function deleteRecursive(dir)
+            local files = _OGFS.list(dir)
+            for _, file in ipairs(files) do
+                local path = dir .. "/" .. file
+                if _OGFS.isDir(path) then
+                    deleteRecursive(path) -- Recursive call for directories
+                else
+                    _OGFS.delete(path) -- Delete file
+                end
+            end
+            _OGFS.delete(dir) -- Delete the directory itself
+        end
+
+        deleteRecursive(installDir)
+    end
+
+    -- Delete the metadata file
+    if _OGFS.exists(metadataFile) then
+        _OGFS.delete(metadataFile)
+    end
 end
+
 
 local function createMetadataFile(mdfn)
     if (mdfn==nil) then print("uninstaller.lua: metadatafilename is nil") end
@@ -204,8 +292,8 @@ parallel.waitForAny(a1, a2)
     end
 end
 
-function uninstaller.uninstall(ogfs, dir)
-    uninstall(ogfs, dir)
+function uninstaller.uninstall(ogfs)
+    uninstall(ogfs)
 end
 
 function uninstaller.installer()
