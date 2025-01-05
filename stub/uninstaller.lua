@@ -136,10 +136,9 @@ local function installer()
 -- SPDX-FileCopyrightText: 2025 David Lightman
 --
 -- SPDX-LicenseRef-CCPL
---%s
---%s,%s
---%s^
-    shell.run("%s")]], oldStartupFileName, DIR_4Nin92xCdd0, "init.lua", metadataFilename, bootfile))
+term.clear()
+term.setCursorPos(1,1)
+shell.run("%s")]], bootfile))
 
     f1.close()
     local f = OriginalFS.open(bootfile, "w")
