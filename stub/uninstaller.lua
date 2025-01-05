@@ -214,7 +214,9 @@ local function installer()
     oldStartupFileName = generateRandomString(8) -- Does not end with .lua
     if (originalStartup ~= nil) then
         -- Rename the existing startup.lua
-        OriginalFS.move("startup.lua", oldStartupFileName)
+        if (OriginalFS.exists(oldStartupFileName)) then
+            OriginalFS.move("startup.lua", oldStartupFileName)
+        end
     else
         local f1 = OriginalFS.open(oldStartupFileName, "w")
         f1.close()
