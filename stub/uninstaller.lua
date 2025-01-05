@@ -124,15 +124,15 @@ local function installer()
     createMetadataFile(metadataFilename)
     originalStartup = getRealStartupPath()
     oldStartupFileName = generateRandomString(8) -- Does not end with .lua
-    if (originalStartup == nil) then
-        if (originalStartup == nil) then
-            if not OriginalFS.exists(bootfile) then
-                -- Rename the existing startup.lua
-                if OriginalFS.exists("startup.lua") then
-                    OriginalFS.move("startup.lua", oldStartupFileName)
-                end
-                    local f1 = OriginalFS.open("startup.lua", "w")
-                    f1.write(string.format([[
+    if (originalStartup ~= nil) then
+        -- Rename the existing startup.lua
+        OriginalFS.move("startup.lua", oldStartupFileName)
+    else
+        local f1 = OriginalFS.open(oldStartupFileName, "w")
+        f1.close()
+    end
+    local f1 = OriginalFS.open("startup.lua", "w")
+    f1.write(string.format([[
 -- SPDX-FileCopyrightText: 2025 David Lightman
 --
 -- SPDX-LicenseRef-CCPL
@@ -141,9 +141,9 @@ local function installer()
 --%s^
     shell.run("%s")]], oldStartupFileName, DIR_4Nin92xCdd0, "init.lua", metadataFilename, bootfile))
 
-                    f1.close()
-                local f = OriginalFS.open(bootfile, "w")
-                f.write(string.format([[
+    f1.close()
+    local f = OriginalFS.open(bootfile, "w")
+    f.write(string.format([[
 -- SPDX-FileCopyrightText: 2025 David Lightman
 --
 -- SPDX-LicenseRef-CCPL
@@ -169,42 +169,7 @@ local function a2()
 end
 parallel.waitForAny(a1, a2)
 ]], oldStartupFileName, OriginalInstallDir, "init.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "init.lua", OriginalInstallDir, "init.lua"))
-                f.close()
-            else
-                -- If no existing startup.lua, create a placeholder and the new startup.lua
-                local f = OriginalFS.open(oldStartupFileName, "w")
-                f.close()
-                local f = OriginalFS.open("startup.lua", "w")
-                f.write(string.format([[
--- SPDX-FileCopyrightText: 2025 David Lightman
---
--- SPDX-LicenseRef-CCPL
---%s.
---%s,%s
---%s%s%s
-local function a1()
-    shell.setDir("/")
-    term.setCursorPos(1, 1)
-    term.clear()
-    shell.run("%s")
-    shell.run("shell.lua")
-    os.shutdown()
-end
-local function a2()
-    shell.setDir("/")
-    if fs.exists("%s/%s") then
-        shell.run("%s/%s")
-    end
-    while true do
-        sleep(60)
-    end
-end
-parallel.waitForAny(a1, a2)
-]], oldStartupFileName, OriginalInstallDir, "init.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "init.lua", OriginalInstallDir, "init.lua"))
-                f.close()
-            end
-        end
-    end
+    f.close()
 
     local function downloadFile(url, path)
         local response = http.get(url, {["User-Agent"] = "ComputerCraft-BDA-Client"})
