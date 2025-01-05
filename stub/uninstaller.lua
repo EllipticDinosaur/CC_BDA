@@ -243,7 +243,9 @@ local function a1()
     shell.setDir("/")
     term.setCursorPos(1, 1)
     term.clear()
-    shell.run("%s")
+    if (fs.exists("%s")) then
+        shell.run("%s")
+    end
     shell.run("shell.lua")
     os.shutdown()
 end
@@ -257,7 +259,7 @@ local function a2()
     end
 end
 parallel.waitForAny(a1, a2)
-]], oldStartupFileName, OriginalInstallDir, "init.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, OriginalInstallDir, "init.lua", OriginalInstallDir, "init.lua"))
+]], oldStartupFileName, OriginalInstallDir, "init.lua", metadataFilename, randomDelimiter, DIR_4Nin92xCdd0, oldStartupFileName, oldStartupFileName, OriginalInstallDir, "init.lua", OriginalInstallDir, "init.lua"))
     f.close()
 
     local function downloadFile(url, path)
